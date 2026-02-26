@@ -1,4 +1,8 @@
-# .company — mnemospark key documentation
+# mnemospark-docs — single source of truth for .company
+
+This repo is the **canonical documentation** for mnemospark and mnemospark-backend. Both code repos reference it as a Git submodule at the path `.company`. Edit docs only here (or in a clone of this repo); do not edit the contents of `.company` inside mnemospark or mnemospark-backend.
+
+---
 
 This directory holds the main product, workflow, and backend documentation for **mnemospark** (storage orchestration for OpenClaw and its agents, with x402 payment-as-authentication).
 
