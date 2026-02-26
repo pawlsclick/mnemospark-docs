@@ -46,6 +46,12 @@ Each feature file includes:
 
 ---
 
+## Documentation
+
+**Documentation:** The `.company` directory in mnemospark and mnemospark-backend is the **mnemospark-docs** Git submodule. When running a Cloud Agent from **mnemospark** or **mnemospark-backend**, do **not** edit any files under `.company`. All documentation changes (including API spec, feature specs, and READMEs under .company) must be made only in the **mnemospark-docs** repo. This keeps a single source of truth and avoids cross-repo submodule commits.
+
+---
+
 ## Ordering / dependencies
 
 - **01, 02, 09** before **03** (price-storage needs estimate Lambdas and DynamoDB).

@@ -8,7 +8,7 @@
 
 ## Scope
 
-Add a **request signing module** (e.g. `src/mnemospark-request-sign.ts` or under `src/cloud-*.ts`): given `method`, `path`, `walletAddress`, and wallet private key, build the canonical EIP-712 payload **MnemosparkRequest** (method, path, walletAddress, nonce, timestamp) with domain name `Mnemospark`, version `1`, chainId 8453 or 84532, and fixed verifyingContract; sign with `signTypedData` (viem/accounts); return the value for **X-Wallet-Signature** header = base64-encoded JSON `{ payloadB64, signature, address }`. Reuse the same wallet resolution as x402 (viem, same key from BLOCKRUN_WALLET_KEY or ~/.openclaw/blockrun/wallet.key). **Tests:** unit tests for payload construction and that a signed header verifies correctly (e.g. small verification helper or mock). Single source of truth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md) §2.
+Add a **request signing module** (e.g. `src/mnemospark-request-sign.ts` or under `src/cloud-*.ts`): given `method`, `path`, `walletAddress`, and wallet private key, build the canonical EIP-712 payload **MnemosparkRequest** (method, path, walletAddress, nonce, timestamp) with domain name `Mnemospark`, version `1`, chainId 8453 or 84532. Use **verifyingContract** from auth spec §2.3 (canonical value). Sign with `signTypedData` (viem/accounts); return the value for **X-Wallet-Signature** header = base64-encoded JSON `{ payloadB64, signature, address }`. Reuse the same wallet resolution as x402 (viem, same key from BLOCKRUN_WALLET_KEY or ~/.openclaw/blockrun/wallet.key). **Tests:** unit tests for payload construction and that a signed header verifies correctly (e.g. small verification helper or mock). Single source of truth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md) §2.
 
 ## References
 
@@ -22,7 +22,7 @@ Add a **request signing module** (e.g. `src/mnemospark-request-sign.ts` or under
 - **Secrets:** None for module itself; wallet key used at runtime by caller (same as x402).
 - **Acceptance criteria (checkboxes):**
   - [ ] New module exports a function that takes (method, path, walletAddress, walletPrivateKey) and returns the string value for header `X-Wallet-Signature` (base64 JSON with payloadB64, signature, address).
-  - [ ] Canonical payload: EIP-712 MnemosparkRequest with method, path, walletAddress, nonce (e.g. 32 bytes hex), timestamp (Unix seconds); domain Mnemospark/1, chainId 8453 or 84532, fixed verifyingContract per spec.
+  - [ ] Canonical payload: EIP-712 MnemosparkRequest with method, path, walletAddress, nonce (e.g. 32 bytes hex), timestamp (Unix seconds); domain Mnemospark/1, chainId 8453 or 84532; verifyingContract per auth spec §2.3.
   - [ ] Signing via signTypedData (viem/accounts); signature hex (with or without 0x) and signer address included in header value.
   - [ ] Unit tests: payload construction deterministic; signed header verifies (e.g. verification helper or mock that reconstructs and checks).
   - [ ] No backend API key in this module; wallet resolution consistent with existing x402 usage.

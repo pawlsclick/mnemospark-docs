@@ -50,7 +50,7 @@ The payload that the client signs **must** be deterministic and include enough c
 
 - **MnemosparkRequest** (EIP-712 typed data):
   - `method`: string (e.g. `"POST"`, `"GET"`).
-  - `path`: string (e.g. `"/price-storage"`, `"/storage/upload"`). Must match the actual path (no query string in path; query params are not signed in this version to keep authorizer simple).
+  - `path`: string (e.g. `"/price-storage"`, `"/storage/upload"`). Must match the actual path (no query string in path; query params are not signed in this version to keep authorizer simple). Use the **logical path without API Gateway stage** (e.g. `/price-storage`, `/storage/upload`). The authorizer must normalize the incoming request path (strip a leading stage segment if present) before comparing to the signed path.
   - `walletAddress`: string (Ethereum address, same as in body/query).
   - `nonce`: string (hex, 32 bytes recommended, e.g. from `crypto.getRandomValues`).
   - `timestamp`: string (Unix seconds; e.g. `Math.floor(Date.now()/1000).toString()`).
@@ -59,7 +59,7 @@ The payload that the client signs **must** be deterministic and include enough c
   - `name`: `"Mnemospark"`.
   - `version`: `"1"`.
   - `chainId`: `8453` (Base mainnet) or `84532` (Base Sepolia) — should match the network the backend expects for payments.
-  - `verifyingContract`: a fixed address (e.g. backend’s “verifying contract” or a well-known constant like `0x0000000000000000000000000000000000000001` for request-signing only). Document this in the API spec so backend and client agree.
+  - `verifyingContract`: **Canonical value:** `0x0000000000000000000000000000000000000001` (request-signing placeholder). This value must be used by the Lambda authorizer (auth-01) and the client signing module (auth-05). Document it in mnemospark_backend_api_spec.md §1 when that section is updated (in mnemospark-docs).
 
 - **Signing:** Use `signTypedData` (viem/accounts) with the wallet private key, the domain above, `primaryType: "MnemosparkRequest"`, and the message. Encode the **message** (or a deterministic JSON string of the message fields) as the **payload** that gets base64’d into `payloadB64`. Backend must reconstruct the same message and verify `signTypedData` (ecrecover) or accept a provided `address` and verify signature.
 
@@ -111,6 +111,8 @@ The payload that the client signs **must** be deterministic and include enough c
 - **ls / download / delete Lambdas:** Require authorizer context `walletAddress` and ensure it matches `wallet_address` in query/body. Deny if mismatch. Do not use `x-api-key`.
 
 ### 3.4 Backend API spec (mnemospark_backend_api_spec.md) — content to add/change
+
+**Where to update:** The API spec lives in mnemospark-docs. The §1 and CORS updates below must be made **only in the mnemospark-docs repo** (not by agents running in mnemospark or mnemospark-backend).
 
 - **§1 Base URL and authentication:** Replace “API key (proxy/server-to-backend)” with:
   - **Authentication:** Wallet proof (no shared API key).
@@ -205,7 +207,7 @@ New feature files **should be created** in a follow-up (not in this spec’s sco
 - **Backend:** No `x-api-key` required; Lambda authorizer validates X-Wallet-Signature where required; price-storage accepts requests with or without wallet proof; storage endpoints require valid wallet proof and authorizer passes walletAddress; WAF rate limits price-storage; Lambdas use authorizer context and do not use API key.
 - **Proxy:** Does not read or send MNEMOSPARK_BACKEND_API_KEY; sends X-Wallet-Signature (optional for price-storage, required for upload/ls/download/delete); uses new signing module with wallet key.
 - **Client:** No backend API key in config or docs; errors for 401/403 are clear.
-- **Docs:** mnemospark_backend_api_spec.md §1 updated to describe wallet-proof auth and CORS without x-api-key.
+- **Docs:** mnemospark_backend_api_spec.md §1 updated **in mnemospark-docs** to describe wallet-proof auth, CORS without x-api-key, and verifyingContract.
 
 ---
 
