@@ -78,6 +78,8 @@ These are the "slash commands" that are supported by the mnemospark plugin:
 - /cloud delete
 - /wallet
 
+All storage commands that talk to the backend (**price-storage**, **upload**, **ls**, **download**, **delete**) **require** `--wallet-address <addr>`. Commands invoked without a wallet address will fail (e.g. "Cannot price storage", "Cannot list storage object"). Backend authentication is wallet proof (no shared API key); the proxy signs each request with the user's wallet.
+
 ### cloud command
 
 /cloud and /cloud help

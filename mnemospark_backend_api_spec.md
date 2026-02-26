@@ -11,10 +11,13 @@ This document defines the **mnemospark-backend** REST API contract: one internet
 ## 1. Base URL and authentication
 
 - **Base URL:** Single API Gateway base URL (e.g. `https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`). All paths are relative to this base.
-- **Authentication:** **API key** (proxy/server-to-backend). Same pattern as [examples/data-transfer-cost-estimate-api](../examples/data-transfer-cost-estimate-api): API Gateway is configured with `ApiKeyRequired: true` and a usage plan.
-  - **Header:** `x-api-key: <api-key-value>` (required on every request).
-  - Keys are created and managed in API Gateway (e.g. Usage Plan + API Key). Clients (mnemospark-proxy) obtain the key via deployment/config. **mnemospark proxy runs on port 7120** (default) on the client/OpenClaw side; it forwards requests to this backend API.
-- **CORS:** Allow origins as configured (e.g. `*` for server-to-server). Allowed headers must include at least: `Content-Type`, `x-api-key`, `Idempotency-Key` (for `POST /storage/upload`), **`PAYMENT-SIGNATURE`**, **`PAYMENT-RESPONSE`** (and legacy **`x-payment`**, **`x-payment-required`**, **`x-payment-response`** if clients send them). Allowed methods: `GET`, `POST`, `DELETE`, `OPTIONS`.
+- **Authentication:** **Wallet proof** (no shared API key). The mnemospark-proxy signs each request with the user's wallet; the backend verifies the signature. See [auth_no_api_key_wallet_proof_spec.md](./auth_no_api_key_wallet_proof_spec.md).
+  - **Header:** `X-Wallet-Signature` (v2) or `x-wallet-signature` (legacy): base64-encoded JSON with `payloadB64`, `signature`, `address`.
+  - **When required:** Required for `POST /storage/upload`, `GET/POST /storage/ls`, `/storage/download`, `/storage/delete`. Optional for `POST /price-storage` (if present, verified and used for per-wallet rate limiting).
+  - **Payload:** EIP-712 typed data `MnemosparkRequest` (method, path, walletAddress, nonce, timestamp). Domain: name `Mnemospark`, version `1`, chainId `8453` (Base mainnet) or `84532` (Base Sepolia), **verifyingContract:** `0x0000000000000000000000000000000000000001`.
+  - **Replay:** Backend rejects if timestamp is older than 5 minutes (configurable).
+  - **mnemospark proxy** runs on port 7120 (default) on the client/OpenClaw side and forwards requests to this backend API.
+- **CORS:** Allow origins as configured (e.g. `*` for server-to-server). Allowed headers must include at least: `Content-Type`, **`X-Wallet-Signature`** (and legacy `x-wallet-signature`), `Idempotency-Key` (for `POST /storage/upload`), **`PAYMENT-SIGNATURE`**, **`PAYMENT-RESPONSE`** (and legacy **`x-payment`**, **`x-payment-required`**, **`x-payment-response`** if clients send them). Allowed methods: `GET`, `POST`, `DELETE`, `OPTIONS`.
 
 ---
 
@@ -151,10 +154,10 @@ Quote lookup, payment verification (EIP-712/USDC), then upload to S3 (bucket per
 
 **Required headers:**
 
-| Header          | Description                                                                    |
-| --------------- | ------------------------------------------------------------------------------ |
-| x-api-key       | API key (all requests).                                                        |
-| Idempotency-Key | Optional but **recommended**. Opaque token (e.g. UUID) for the upload. See §9. |
+| Header            | Description                                                                       |
+| ----------------- | --------------------------------------------------------------------------------- |
+| X-Wallet-Signature | Required. Wallet proof (base64 JSON: payloadB64, signature, address). See §1.     |
+| Idempotency-Key   | Optional but **recommended**. Opaque token (e.g. UUID) for the upload. See §9.    |
 
 **Request (JSON body):** At minimum, the proxy must send quote and payment context; exact payload is partially **outstanding** (see §11).
 
