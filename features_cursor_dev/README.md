@@ -29,7 +29,9 @@ The agent must work **only in the repo it was started in**. Do **not** open, clo
 
 **mnemospark proxy port:** For client features (11–14), the mnemospark proxy listens on **port 7120** by default. Agents and config should use `http://127.0.0.1:7120` when talking to the proxy (configurable via `MNEMOSPARK_PROXY_PORT`).
 
-**AWS documentation (CloudFormation/SAM):** Cloud Agents do not have an AWS MCP server. They have internet access. When implementing backend features (01–10, 15–17), use **[AWS_DOCS_REFERENCES.md](AWS_DOCS_REFERENCES.md)** for official AWS doc URLs (API Gateway, Lambda, DynamoDB, WAF, CloudWatch, CloudFront, SAM). Fetch or open those URLs as needed for resource syntax and properties.
+**AWS documentation (CloudFormation/SAM):** Cloud Agents should use the AWS MCP server it is enabled and available https://knowledge-mcp.global.api.aws when implementing features follow AWS Best Practices for API Gateway, Lambda, DynamoDB, WAF, CloudWatch, CloudFront, SAM.
+
+Fall back to **[AWS_DOCS_REFERENCES.md](AWS_DOCS_REFERENCES.md)** for official AWS doc URLs (API Gateway, Lambda, DynamoDB, WAF, CloudWatch, CloudFront, SAM). Fetch or open those URLs as needed for resource syntax and properties.
 
 ---
 
