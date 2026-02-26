@@ -206,7 +206,7 @@ What this command does:
 3. Expects: client payment authorization (EIP-712)
 4. Locates `<quote-id>` in Dynamo DB, if found continue workflow, if not found end workflow error: no quote
 5. Matches `<object-id-hash>` from **mnenospark-proxy** to `<object-id-hash>` in in Dynamo DB for `<quote-id>`, if found contine workflow, if not found end workflow error: no quote mismatch
-6. Verifies signature + terms, then settles USDC payment on the Base blockchain, gets the blockchain transaction id `<trans-id>`, example see: .company/clawrouter_wallet_gen_payment_eip712.md
+6. Verifies signature + terms, then settles USDC payment on the Base blockchain, gets the blockchain transaction id `<trans-id>`, example see: .company/wallet_gen_payment_eip712.md
 7. If payment is verified continue workflow, if not end workflow error: payment failed
 8. Checks to see if the user has a S3 bucket tied to the users wallet address, if yes use the existing bucket, if not create the bucket, in the region and create the wallet address hash
 9. Request `<object-id>` from **mnenospark-proxy**

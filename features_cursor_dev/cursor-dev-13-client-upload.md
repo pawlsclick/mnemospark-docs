@@ -14,7 +14,7 @@ Implement the **mnemospark-client** and **mnemospark-proxy** flow for `/cloud up
 
 - [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — upload command (client, proxy, backend, cron hint)
 - [mnemospark_backend_api_spec.md](../mnemospark_backend_api_spec.md) §6, §9 (upload, idempotency)
-- [clawrouter_wallet_gen_payment_eip712.md](../clawrouter_wallet_gen_payment_eip712.md) — EIP-712 payment
+- [wallet_gen_payment_eip712.md](../wallet_gen_payment_eip712.md) — EIP-712 payment
 - Design pattern: `examples/object_storage_management_aws.py`
 
 ## Cloud Agent

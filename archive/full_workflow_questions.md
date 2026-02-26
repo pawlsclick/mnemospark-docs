@@ -200,7 +200,7 @@ Answers below are derived from the repo (workflow, PRD, spec*feedback, slash_com
 
 ### U7. Wallet directory and key path
 
-- **Answer:** Workflow and clawrouter_wallet_gen_payment_eip712.md agree: **blockrun first**, then mnemospark. So resolution order: (1) `~/.openclaw/blockrun/wallet.key`, (2) `~/.openclaw/mnemospark/key/wallet.key`. The **directory** for mnemospark is `~/.openclaw/mnemospark/key`, and the key file is **wallet.key** inside it. PRD’s “wallet at ~/.openclaw/mnemospark/wallet.key” is slightly off — should say “wallet at ~/.openclaw/blockrun/wallet.key if present, else ~/.openclaw/mnemospark/key/wallet.key”. Update PRD to match workflow.
+- **Answer:** Workflow and wallet_gen_payment_eip712.md agree: **blockrun first**, then mnemospark. So resolution order: (1) `~/.openclaw/blockrun/wallet.key`, (2) `~/.openclaw/mnemospark/key/wallet.key`. The **directory** for mnemospark is `~/.openclaw/mnemospark/key`, and the key file is **wallet.key** inside it. PRD’s “wallet at ~/.openclaw/mnemospark/wallet.key” is slightly off — should say “wallet at ~/.openclaw/blockrun/wallet.key if present, else ~/.openclaw/mnemospark/key/wallet.key”. Update PRD to match workflow.
 
 ### U8. Get storage usage command
 

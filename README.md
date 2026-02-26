@@ -14,7 +14,7 @@ This directory holds the main product, workflow, and backend documentation for *
 | [mnemospark_PRD.md](./mnemospark_PRD.md)                                             | Product requirements document: problem, goals, requirements (R1–R14), success metrics.                                              |
 | [mnemospark_full_workflow.md](./mnemospark_full_workflow.md)                         | End-to-end workflow: commands (`/cloud`, `/wallet`), client/proxy/backend steps, canonical source for slash commands and arguments. |
 | [mnemospark_backend_api_spec.md](./mnemospark_backend_api_spec.md)                   | Backend REST API: endpoints, auth, request/response, idempotency, error codes.                                                      |
-| [clawrouter_wallet_gen_payment_eip712.md](./clawrouter_wallet_gen_payment_eip712.md) | EIP-712 payment flow and wallet/signing for x402 (Base/USDC).                                                                       |
+| [wallet_gen_payment_eip712.md](./wallet_gen_payment_eip712.md) | EIP-712 payment flow and wallet/signing for x402 (Base/USDC).                                                                       |
 
 ## Directories
 

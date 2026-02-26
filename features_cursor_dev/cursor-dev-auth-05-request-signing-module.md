@@ -13,7 +13,7 @@ Add a **request signing module** (e.g. `src/mnemospark-request-sign.ts` or under
 ## References
 
 - [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md) §2 (header, payload, canonical request, EIP-712 domain)
-- [clawrouter_wallet_gen_payment_eip712.md](../clawrouter_wallet_gen_payment_eip712.md) — EIP-712 patterns (viem/accounts)
+- [wallet_gen_payment_eip712.md](../wallet_gen_payment_eip712.md) — EIP-712 patterns (viem/accounts)
 
 ## Cloud Agent
 

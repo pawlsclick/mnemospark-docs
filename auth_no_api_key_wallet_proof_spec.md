@@ -195,7 +195,7 @@ New feature files **should be created** in a follow-up (not in this spec’s sco
 - [mnemospark_backend_api_spec.md](mnemospark_backend_api_spec.md) §1 (after update), §2 (x402), §5.3, §6–§8.
 - [mnemospark_full_workflow.md](mnemospark_full_workflow.md) — price-storage, upload, ls, download, delete.
 - [infrastructure_design/internet_facing_API.md](infrastructure_design/internet_facing_API.md) — Lambda authorizer, WAF, CloudFront.
-- [clawrouter_wallet_gen_payment_eip712.md](clawrouter_wallet_gen_payment_eip712.md) — EIP-712 patterns (same viem/accounts usage).
+- [wallet_gen_payment_eip712.md](wallet_gen_payment_eip712.md) — EIP-712 patterns (same viem/accounts usage).
 - Existing cursor-dev: [cursor-dev-08-api-gateway-auth.md](features_cursor_dev/cursor-dev-08-api-gateway-auth.md) (current API Gateway; auth-02 replaces API key with authorizer), [cursor-dev-12](features_cursor_dev/cursor-dev-12-client-price-storage.md), [cursor-dev-13](features_cursor_dev/cursor-dev-13-client-upload.md), [cursor-dev-14](features_cursor_dev/cursor-dev-14-client-ls-download-delete.md) for client/proxy flow; [cursor-dev-15](features_cursor_dev/cursor-dev-15-cfn-waf.md) for WAF.
 
 ---
@@ -214,5 +214,5 @@ New feature files **should be created** in a follow-up (not in this spec’s sco
 - [mnemospark_backend_api_spec.md](mnemospark_backend_api_spec.md) — API contract; §1 to be updated.
 - [mnemospark_full_workflow.md](mnemospark_full_workflow.md) — Commands and flows.
 - [infrastructure_design/internet_facing_API.md](infrastructure_design/internet_facing_API.md) — CloudFront, WAF, API Gateway, Lambda authorizer.
-- [clawrouter_wallet_gen_payment_eip712.md](clawrouter_wallet_gen_payment_eip712.md) — EIP-712 and wallet usage.
+- [wallet_gen_payment_eip712.md](wallet_gen_payment_eip712.md) — EIP-712 and wallet usage.
 - [features_cursor_dev/README.md](features_cursor_dev/README.md) — Conventions and repo mapping; do not change existing feature files.

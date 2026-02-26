@@ -14,7 +14,7 @@ Implement the upload Lambda for `POST /storage/upload`: lookup quote in DynamoDB
 
 - [mnemospark_backend_api_spec.md](../mnemospark_backend_api_spec.md) §6 (upload), §9 (idempotency)
 - [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — upload workflow
-- [clawrouter_wallet_gen_payment_eip712.md](../clawrouter_wallet_gen_payment_eip712.md) — EIP-712 payment
+- [wallet_gen_payment_eip712.md](../wallet_gen_payment_eip712.md) — EIP-712 payment
 - Design pattern: `examples/object_storage_management_aws.py` (bucket per wallet, encryption, ensure_bucket_exists)
 
 ## Cloud Agent
