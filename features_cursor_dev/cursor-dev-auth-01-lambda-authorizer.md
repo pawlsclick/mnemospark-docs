@@ -4,7 +4,7 @@
 **Repo:** mnemospark-backend  
 **Rough size:** One Cloud Agent run
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository; all code and references are in this repo and `.company/`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository; all code and references are in this repo and `.company/`. The spec for this feature in this repo is at `.company/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`.
 
 ## Scope
 

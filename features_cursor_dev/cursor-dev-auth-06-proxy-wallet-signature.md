@@ -4,7 +4,7 @@
 **Repo:** mnemospark  
 **Rough size:** One Cloud Agent run
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). Client features (11–14) and proxy are in this repo. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository; all code and references are in this repo and `.company/`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). Client features (11–14) and proxy are in this repo. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository; all code and references are in this repo and `.company/`. The spec for this feature in this repo is at `.company/features_cursor_dev/cursor-dev-auth-06-proxy-wallet-signature.md`.
 
 ## Scope
 

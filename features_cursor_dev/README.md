@@ -10,22 +10,21 @@ Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/doc
 
 1. Pick a feature file below (or from the list in this directory).
 2. Start a **Cloud Agent** (Cloud dropdown in the agent input, or [cursor.com/agents](https://cursor.com/agents)).
-3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria.
+3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from mnemospark or mnemospark-backend, the feature file lives under the `.company` submodule. Always use the path `.company/features_cursor_dev/<filename>` (e.g. `.company/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`). Do not use `features_cursor_dev/...` without the `.company/` prefix.
 4. The agent works on a **separate branch** and pushes for handoff; verify via "Checkout Branch" or "Open VM" as needed.
 
 ---
 
 ## Repo mapping (where to run the Cloud Agent)
 
-- **Backend features (01–10, 15–18, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo. Seed that repo first by running from mnemospark:  
-  `./scripts/seed-mnemospark-backend.sh /path/to/mnemospark-backend`
+- **Backend features (01–10, 15–18, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo. Ensure the docs submodule is populated: in mnemospark-backend run `git submodule update --init` (or clone with `git clone --recurse-submodules`).
 - **Client features (11–14, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
 
 The agent must work **only in the repo it was started in**. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository.
 
 | Features                      | Repo to run agent from | Notes                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01–10, 15–18, auth-01–auth-04 | **mnemospark-backend** | Seed first (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md). |
+| 01–10, 15–18, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md). |
 | 11–14, auth-05–auth-07        | **mnemospark**         | Plugin/client.                                                                                                                                                                                                                                                                                                                                             |
 
 **mnemospark proxy port:** For client features (11–14), the mnemospark proxy listens on **port 7120** by default. Agents and config should use `http://127.0.0.1:7120` when talking to the proxy (configurable via `MNEMOSPARK_PROXY_PORT`).
@@ -43,6 +42,12 @@ Each feature file includes:
 - **References** — links to API spec, workflow, design doc, or examples.
 - **Cloud Agent** — install (idempotent), start (if needed), secrets, **acceptance criteria (checkboxes)**.
 - **Task string (optional)** — copy-paste prompt for the agent.
+
+---
+
+## Path to feature files when running from a code repo
+
+In mnemospark and mnemospark-backend, feature specs are under `.company/`. Use `.company/features_cursor_dev/<feature-file>.md` when telling the agent which file to execute (e.g. `.company/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
 
 ---
 
