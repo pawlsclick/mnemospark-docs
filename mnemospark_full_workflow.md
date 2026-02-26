@@ -54,6 +54,12 @@ A Lambda function will need to do the following:
 - Wallet Key: if `~/.openclaw/blockrun/wallet.key` exists use it as the wallet key, if not `~/.openclaw/mnemospark/key/wallet.key`
 - Key store (KEK per wallet): `~/.openclaw/mnemospark/keys` — files like <wallet_short_hash>.key
 
+## Proxy and backend configuration
+
+- **Required environment:** `MNEMOSPARK_BACKEND_API_BASE_URL` (or use the default); wallet (already required for upload and BlockRun). **No backend API key** is needed — do not set or pass `MNEMOSPARK_BACKEND_API_KEY` or `x-api-key` for proxy→backend.
+- **Backend authentication:** Wallet proof (no shared API key). The proxy signs requests with the user's wallet; the backend verifies the signature. The canonical API spec is in this repo: [mnemospark_backend_api_spec.md](./mnemospark_backend_api_spec.md).
+- **401/403 errors:** When the backend returns 401 or 403 (e.g. invalid or expired wallet signature), the user sees a clear message such as "Wallet signature invalid or expired", or context-specific messages like "Cannot price storage" / "Cannot upload" as appropriate.
+
 ## full workflow
 
 The complete workflow of mnenospark described from the point of view of the mnemospark client initiating a command.
