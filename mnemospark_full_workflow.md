@@ -50,8 +50,8 @@ A Lambda function will need to do the following:
 ## mnenospark file locations
 
 - Logs: `~/.openclaw/mnemospark/object.log`
-- Wallet Directory: if `~/.openclaw/blockrun` exists use it as the wallet directory, if not `~/.openclaw/mnemospark/key`
-- Wallet Key: if `~/.openclaw/blockrun/wallet.key` exists use it as the wallet key, if not `~/.openclaw/mnemospark/key/wallet.key`
+- Wallet Directory: `~/.openclaw/mnemospark/wallet`
+- Wallet Key: `~/.openclaw/mnemospark/wallet/wallet.key` (or `~/.openclaw/blockrun/wallet.key` if reusing a legacy Blockrun wallet)
 - Key store (KEK per wallet): `~/.openclaw/mnemospark/keys` — files like <wallet_short_hash>.key
 
 ## Proxy and backend configuration
@@ -110,9 +110,9 @@ What this command does:
 Only on MacOS or Linux
 
 1. Takes the arguments `<file>` or `<directory>` from the local file system
-2. Checks for /tmp directory
-3. Checks available disk space in /tmp directory
-4. tar and gzip the file and or directory and save to /tmp (do not exceed available disk space), the file name is the `<object-id>`
+2. Resolves the backup directory under `~/.openclaw/mnemospark/backup` (creating it if needed)
+3. Checks available disk space in the backup directory
+4. tar and gzip the file and or directory and save to `~/.openclaw/mnemospark/backup` (do not exceed available disk space), the file name is the `<object-id>`
 5. Hash256 the file, this is the `<object-id-hash>`
 6. Determine the file size in gb, this is the `<object-size-gb>`
 7. Create a log file with the storage object identifier `<object-id>` and `<object-id-hash>` and `<object-size-gb>`
