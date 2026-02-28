@@ -4,7 +4,7 @@
 **Repo:** mnemospark  
 **Rough size:** One Cloud Agent run
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin/client). Do **not** open, clone, or require access to mnemospark-backend or mnemospark-docs; all code and references are in this repo and `.company/`. The workflow spec is in [.company/mnemospark_full_workflow.md](../mnemospark_full_workflow.md) (in this repo: `mnemospark_full_workflow.md` at root). The implementation plan is in the docs repo: [upload_and_delete_workflow_docs](https://github.com/pawlsclick/mnemospark-docs) plan "Upload and delete workflow docs" (upload/delete client steps and cron-id).
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin/client). Do **not** open, clone, or require access to mnemospark-backend or mnemospark-docs; all code and references are in this repo and `.company/`. The workflow spec is in [.company/mnemospark_full_workflow.md](../mnemospark_full_workflow.md) (in this repo: `mnemospark_full_workflow.md` at root). The implementation plan is in the docs repo: [upload_and_delete_workflow](upload_and_delete_workflow.md) plan "Upload and delete workflow docs" (upload/delete client steps and cron-id).
 
 ## Scope
 

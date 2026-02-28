@@ -2,30 +2,15 @@
 
 ## update-company-submodules.sh
 
-Updates the `.company` submodule (this repo) to the latest remote in **mnemospark** and **mnemospark-backend**.
+Updates the `.company` submodule (this repo) to the latest remote in **mnemospark** and **mnemospark-backend**, then **commits and pushes** the new submodule reference in each repo so they stay in sync and GitHub / fresh clones see the latest mnemospark-docs (including e.g. `cursor-dev-19-*` and `cursor-dev-20-*`).
 
 ```bash
 ./scripts/update-company-submodules.sh
 ```
 
-This only updates the **working tree** in each repo. After running it, `mnemospark/.company` and `mnemospark-backend/.company` will show the latest mnemospark-docs (including e.g. `features_cursor_dev/cursor-dev-19-*` and `cursor-dev-20-*`).
+The script:
 
-### Making the update visible to others (GitHub, fresh clones)
+1. In **mnemospark**: `git submodule update --remote .company`; if the submodule pointer changed, commits and pushes.
+2. In **mnemospark-backend**: same.
 
-The parent repos (mnemospark, mnemospark-backend) record which **commit** of mnemospark-docs the `.company` submodule points to. Until that recorded reference is updated and pushed, anyone viewing the repo on GitHub or cloning it will still see the **old** `.company` commit (without the newest files).
-
-To pin the parent repos to the latest mnemospark-docs:
-
-1. Run `./scripts/update-company-submodules.sh` (or `git submodule update --remote .company` in each repo).
-2. In **mnemospark**:
-   - `cd /path/to/mnemospark`
-   - `git add .company`
-   - `git commit -m "chore: update .company to latest mnemospark-docs"`
-   - `git push`
-3. In **mnemospark-backend**:
-   - `cd /path/to/mnemospark-backend`
-   - `git add .company`
-   - `git commit -m "chore: update .company to latest mnemospark-docs"`
-   - `git push`
-
-After pushing, the submodule pointer in each parent repo will point to the latest mnemospark-docs, and `.company` on GitHub / in new clones will include the latest cursor-dev specs.
+If there is no change to `.company` in a repo (already at latest), it skips commit/push for that repo. Requires push access to both repos.
