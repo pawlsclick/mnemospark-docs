@@ -6,7 +6,7 @@
 
 set -e
 
-REPO="${REPO:-pawlsclick/mnemospark}"
+REPO="${REPO:-pawlsclick/mnemospark-backend}"
 LIMIT="${LIMIT:-50}"
 
 # Match Bugbot comment bodies (multiline-safe via jq). Patterns from GitHub UI:
