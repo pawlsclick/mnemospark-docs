@@ -6,7 +6,7 @@
 
 **Plan coverage:** This file implements the full plan "Upload and delete workflow docs" scope for the **mnemospark-docs** repo: (1) mnemospark_full_workflow.md upload client 7-step list, (2) delete client 4-step list, (3) optional file-locations Logs bullet, (4) new meta_docs/cron-id-usage.md. All other docs (install_guidelines, mnemospark_backend_api_spec, cursor-dev-13/14) are out of scope per the plan (no change or optional later). Client code that implements this workflow is in **cursor-dev-20** (mnemospark repo).
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-docs. Documentation and workflow specs live here. Do **not** open, clone, or require access to mnemospark or mnemospark-backend; all files to edit are in this repo. The spec for this feature is at [features_cursor_dev/cursor-dev-19-workflow-upload-delete-cron-id.md](cursor-dev-19-workflow-upload-delete-cron-id.md).
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-docs. Documentation and workflow specs live here. Do **not** open, clone, or require access to mnemospark or mnemospark-backend; all files to edit are in this repo. The spec for this feature is at [cursor-dev-19-workflow-upload-delete-cron-id.md](cursor-dev-19-workflow-upload-delete-cron-id.md) (this file).
 
 ## Scope
 
@@ -32,7 +32,7 @@
 ## References
 
 - [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — upload command (§ upload command), delete command (§ delete command), mnenospark file locations
-- [.cursor/plans/upload_and_delete_workflow_docs_bfdc69d4.plan.md](../.cursor/plans/upload_and_delete_workflow_docs_bfdc69d4.plan.md) or plan "Upload and delete workflow docs" — full change list
+- Plan "Upload and delete workflow docs" — full change list (local: `.cursor/plans/upload_and_delete_workflow_docs_bfdc69d4.plan.md`; not in this repo)
 - [meta_docs/trans-id-payment-settement.md](../meta_docs/trans-id-payment-settement.md), [meta_docs/quote-id-dynamodb.md](../meta_docs/quote-id-dynamodb.md) — style reference for cron-id meta doc
 
 ## Cloud Agent

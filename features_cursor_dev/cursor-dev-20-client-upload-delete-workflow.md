@@ -4,7 +4,7 @@
 **Repo:** mnemospark  
 **Rough size:** One Cloud Agent run
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin/client). Do **not** open, clone, or require access to mnemospark-backend or mnemospark-docs; all code and references are in this repo and `.company/`. The workflow spec is in [.company/mnemospark_full_workflow.md](.company/mnemospark_full_workflow.md). The implementation plan is in the docs repo: [upload_and_delete_workflow_docs](https://github.com/pawlsclick/mnemospark-docs) plan "Upload and delete workflow docs" (upload/delete client steps and cron-id).
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin/client). Do **not** open, clone, or require access to mnemospark-backend or mnemospark-docs; all code and references are in this repo and `.company/`. The workflow spec is in [.company/mnemospark_full_workflow.md](../mnemospark_full_workflow.md) (in this repo: `mnemospark_full_workflow.md` at root). The implementation plan is in the docs repo: [upload_and_delete_workflow_docs](https://github.com/pawlsclick/mnemospark-docs) plan "Upload and delete workflow docs" (upload/delete client steps and cron-id).
 
 ## Scope
 
@@ -27,9 +27,9 @@ Implement the **mnemospark-client** behavior for `/cloud upload` and `/cloud del
 
 ## References
 
-- [.company/mnemospark_full_workflow.md](.company/mnemospark_full_workflow.md) — upload command (mnenospark-client steps 1–7), delete command (mnenospark-client steps 1–4)
-- Plan: Upload and delete workflow docs (upload order, delete order, cron-id) — client steps and [meta_docs/cron-id-usage.md](.company/meta_docs/cron-id-usage.md) description of cron-id
-- Existing upload flow: [src/cloud-command.ts](src/cloud-command.ts) — `appendStorageUploadLog`, `formatStorageUploadUserMessage`, upload handler; delete handler
+- [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — upload command (mnenospark-client steps 1–7), delete command (mnenospark-client steps 1–4) (in mnemospark repo: `.company/mnemospark_full_workflow.md`)
+- Plan: Upload and delete workflow docs (upload order, delete order, cron-id) — client steps and [meta_docs/cron-id-usage.md](../meta_docs/cron-id-usage.md) description of cron-id (in mnemospark repo: `.company/meta_docs/cron-id-usage.md`)
+- Existing upload flow: [src/cloud-command.ts](https://github.com/pawlsclick/mnemospark/blob/main/src/cloud-command.ts) — `appendStorageUploadLog`, `formatStorageUploadUserMessage`, upload handler; delete handler
 
 ## Cloud Agent
 
