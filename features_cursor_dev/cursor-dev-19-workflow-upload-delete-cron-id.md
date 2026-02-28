@@ -22,7 +22,7 @@
 2. **mnemospark_full_workflow.md — Delete command (mnenospark-client):** Replace the current 2-step list under **mnenospark-client** for the delete command (after "Returns response to **mnenospark-client**" and before "### wallet command") with the following 4-step list:
    - 1. Accepts response from **mnenospark-proxy**
    - 2. Deletes the cron job associated with `<cron-id>` for `<object-key>`
-   - 3. Print message to user: File `<s3-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system.
+   - 3. Print message to user: File `<object-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system.
    - 4. Print message to user: Thank you for using mnemospark!
 
 3. **mnemospark_full_workflow.md — File locations (optional):** In the "mnenospark file locations" section, extend the "Logs: `~/.openclaw/mnemospark/object.log`" bullet with one sentence noting that the client appends upload and payment-cron rows to this log, and that upload rows may include `<cron-id>` and `<object-id>` for cron tracking.
