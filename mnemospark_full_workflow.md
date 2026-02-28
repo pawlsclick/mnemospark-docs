@@ -173,7 +173,7 @@ What this command does:
 1. Accepts response from **mnenospark-proxy**
 2. Writes to log file: `<YYYY-MM-DD HH:MM:SS>`,`<quote-id>`,`<storage-price>`,`<addr>`,`<object-id>`,`<object-id-hash>`,`<object-size-gb>`,`<provider>`,`<location>`
 3. Print message to user: Your storage quote `<quote-id>` is valid for 1 hour, the storage price is `<storage-price>` for `<object-id>` with file size of `<object-size-gb>` in `<provider>` `<location>`
-4. Print message to user: If you accept this quote run the command /cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>`
+4. Print message to user: If you accept this quote run the command /cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
 5. If error, print message "Cannot price storage"
 
 ### upload command
@@ -214,13 +214,13 @@ What this command does:
 2. Expects: --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
 3. Expects: client payment authorization (EIP-712)
 4. Locates `<quote-id>` in Dynamo DB, if found continue workflow, if not found end workflow error: no quote
-5. Matches `<object-id-hash>` from **mnenospark-proxy** to `<object-id-hash>` in in Dynamo DB for `<quote-id>`, if found contine workflow, if not found end workflow error: no quote mismatch
+5. Matches `<object-id-hash>` from **mnenospark-proxy** to `<object-id-hash>` in in Dynamo DB for `<quote-id>`, if found continue workflow, if not found end workflow error: no quote mismatch
 6. Verifies signature + terms, then settles USDC payment on the Base blockchain, gets the blockchain transaction id `<trans-id>`, example see: .company/wallet_gen_payment_eip712.md
 7. If payment is verified continue workflow, if not end workflow error: payment failed
 8. Checks to see if the user has a S3 bucket tied to the users wallet address, if yes use the existing bucket, if not create the bucket, in the region and create the wallet address hash
 9. Request `<object-id>` from **mnenospark-proxy**
 10. Transfer the `<object-id>` to the S3 bucket
-11. Log transaction in the Dynamo DB: `<YYYY-MM-DD HH:MM:SS>`,`<quote-id>`,`<addr>`,`<addr-hash>`,`<trans-id>`,`<storage-price>`,`<object-id>`,`<object-id-key>`,`<provider>`,`<bucket-name>`,`<location>`
+11. Log transaction in the Dynamo DB: `<YYYY-MM-DD HH:MM:SS>`,`<quote-id>`,`<addr>`,`<addr-hash>`,`<trans-id>`,`<storage-price>`,`<object-id>`,`<object-key>`,`<provider>`,`<bucket-name>`,`<location>`
 12. Response to return: `<quote-id>`,`<addr>`,`<addr-hash>`,`<trans-id>`,`<storage-price>`,`<object-id>`,`<object-key>`,`<provider>`,`<bucket-name>`,`<location>`
 13. Fails gracefully if execution errors, returns response to **mnenospark-proxy**
 14. Success returns response to **mnenospark-proxy**  
