@@ -49,7 +49,7 @@ A Lambda function will need to do the following:
 
 ## mnenospark file locations
 
-- Logs: `~/.openclaw/mnemospark/object.log`
+- Logs: `~/.openclaw/mnemospark/object.log` — the client appends upload and payment-cron rows to this log; upload rows may include `<cron-id>` and `<object-id>` for cron tracking.
 - Wallet Directory: `~/.openclaw/mnemospark/wallet`
 - Wallet Key: `~/.openclaw/mnemospark/wallet/wallet.key` (or `~/.openclaw/blockrun/wallet.key` if reusing a legacy Blockrun wallet)
 - Key store (KEK per wallet): `~/.openclaw/mnemospark/keys` — files like <wallet_short_hash>.key
@@ -236,8 +236,11 @@ What this command does:
 
 1. Accepts response from **mnenospark-proxy**
 2. Writes to log file: `<YYYY-MM-DD HH:MM:SS>`,`<quote-id>`,`<addr>`,`<addr-hash>`,`<trans-id>`,`<storage-price>`,`<object-id>`,`<object-key>`,`<provider>`,`<bucket-name>`,`<location>`
-3. Print message to user: Your file `<object-id>` with key `<object-key>` has been stored using `<provider>` in `<bucket-name>` `<location>`
-4. Builds a cron job to send x402 payment of USDC `<storage-price>` **every 30 days** for `<object-id>` matching the `<quote-id>` and `<storage-price>`. The cron job should notify the user that payment will be sent; if payment is not sent, the backend will delete the `<object-id>` after the **32-day deadline** (30-day billing interval + 2-day grace period).
+3. Builds a cron job to send x402 payment of USDC `<storage-price>` **every 30 days** for `<object-id>` matching the `<quote-id>` and `<storage-price>`.
+4. Update the log file: add fields for the `<cron-job>` id and the associated `<object-id>`
+5. Print message to user: Your file `<object-id>` with key `<object-key>` has been stored using `<provider>` in `<bucket-name>` `<location>`
+6. Print message to user: A cron job `<cron-job>` has been configured to send payment every 30 days for storage services. If payment is not sent, your `<object-id>` will be deleted after the **32-day deadline** (30-day billing interval + 2-day grace period).
+7. Print message to user: Thank you for using mnemospark!
 
 ### ls command
 
@@ -376,7 +379,9 @@ What this command does:
 **mnenospark-client**
 
 1. Accepts response from **mnenospark-proxy**
-2. Print message to user: File `<s3-key>` deleted
+2. Deletes the cron job associated with `<cron-id>` for `<object-key>`
+3. Print message to user: File `<s3-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system.
+4. Print message to user: Thank you for using mnemospark!
 
 ### wallet command
 
