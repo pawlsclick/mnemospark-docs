@@ -22,7 +22,7 @@ pull_main() {
   if [[ "$branch" != "main" ]]; then
     git checkout main
   fi
-  git pull origin main
+  git pull origin main --no-rebase
   echo "  Done."
 }
 
