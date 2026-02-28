@@ -49,6 +49,7 @@ A Lambda function will need to do the following:
 
 ## mnenospark file locations
 
+- **Object key:** `<object-key>` is the storage key for the object (the key under which it is stored in S3 and returned by the upload API).
 - Logs: `~/.openclaw/mnemospark/object.log` — the client appends upload and payment-cron rows to this log; upload rows may include `<cron-id>` and `<object-id>` for cron tracking.
 - Wallet Directory: `~/.openclaw/mnemospark/wallet`
 - Wallet Key: `~/.openclaw/mnemospark/wallet/wallet.key` (or `~/.openclaw/blockrun/wallet.key` if reusing a legacy Blockrun wallet)
@@ -244,18 +245,18 @@ What this command does:
 
 ### ls command
 
-/cloud ls --wallet-address `<addr>` --object-key `<s3-key>`
+/cloud ls --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
 - --wallet-address `<addr>` the agent's crypto wallet on the Base blockchain
-- --object-key `<s3-key>` the key returned from the upload operation
+- --object-key `<object-key>` the key returned from the upload operation
 
 Example code: examples/object_storage_management_aws.py
 
 What this command does:
 
-1. Takes the arguments --wallet-address `<addr>` --object-key `<s3-key>`
+1. Takes the arguments --wallet-address `<addr>` --object-key `<object-key>`
 2. Sends to **mnenospark-proxy**  
    _pass workflow to_
 
@@ -272,7 +273,7 @@ What this command does:
 **Backend path:** `GET /storage/ls` or `POST /storage/ls` → object storage Lambda (list object metadata: name + size).
 
 1.  Accepts command from **mnenospark-proxy**
-2.  Expects: --wallet-address `<addr>` --object-key `<s3-key>`
+2.  Expects: --wallet-address `<addr>` --object-key `<object-key>`
 3.  Queries the associated S3 bucket, list object in S3 (name + size). Returns result dict with success, key, size_bytes, bucket, error.
 4.  Sends query output to **mnenospark-proxy**  
     _pass workflow to_
@@ -286,22 +287,22 @@ What this command does:
 **mnenospark-client**
 
 1. Accepts response from **mnenospark-proxy**
-2. Print message to user: `<object-id>` with `<s3-key>` is `<size-bytes>` in `<bucket-name>`
+2. Print message to user: `<object-id>` with `<object-key>` is `<size-bytes>` in `<bucket-name>`
 
 ### download command
 
-/cloud download --wallet-address `<addr>` --object-key `<s3-key>`
+/cloud download --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
 - --wallet-address `<addr>` the agent's crypto wallet on the Base blockchain
-- --object-key `<s3-key>` the key returned from the upload operation
+- --object-key `<object-key>` the key returned from the upload operation
 
 Example code: examples/object_storage_management_aws.py
 
 What this command does:
 
-1. Takes the arguments --wallet-address `<addr>` --object-key `<s3-key>`
+1. Takes the arguments --wallet-address `<addr>` --object-key `<object-key>`
 2. Sends to **mnenospark-proxy**  
    _pass workflow to_
 
@@ -318,7 +319,7 @@ What this command does:
 **Backend path:** `GET /storage/download` or `POST /storage/download` → object storage Lambda (get object, decrypt, stream or return to proxy).
 
 1.  Accepts command from **mnenospark-proxy**
-2.  Expects: --wallet-address `<addr>` --object-key `<s3-key>`
+2.  Expects: --wallet-address `<addr>` --object-key `<object-key>`
 3.  Queries the associated S3 bucket locates the file and streams it to the proxy
 4.  Sends file stream output to **mnenospark-proxy**  
     _pass workflow to_
@@ -333,22 +334,22 @@ What this command does:
 **mnenospark-client**
 
 1. Accepts response from **mnenospark-proxy**
-2. Print message to user: File `<s3-key>` downloaded
+2. Print message to user: File `<object-key>` downloaded
 
 ### delete command
 
-/cloud delete --wallet-address `<addr>` --object-key `<s3-key>`
+/cloud delete --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
 - --wallet-address `<addr>` the agent's crypto wallet on the Base blockchain
-- --object-key `<s3-key>` the key returned from the upload operation
+- --object-key `<object-key>` the key returned from the upload operation
 
 Example code: examples/object_storage_management_aws.py
 
 What this command does:
 
-1. Takes the arguments --wallet-address `<addr>` --object-key `<s3-key>`
+1. Takes the arguments --wallet-address `<addr>` --object-key `<object-key>`
 2. Sends to **mnenospark-proxy**  
    _pass workflow to_
 
@@ -365,7 +366,7 @@ What this command does:
 **Backend path:** `POST /storage/delete` or `DELETE /storage/delete` → object storage Lambda (delete object; delete bucket if empty).
 
 1.  Accepts command from **mnenospark-proxy**
-2.  Expects: --wallet-address `<addr>` --object-key `<s3-key>`
+2.  Expects: --wallet-address `<addr>` --object-key `<object-key>`
 3.  Queries the associated S3 bucket locates the file and deletes it
 4.  Sends response to **mnenospark-proxy**  
     _pass workflow to_
@@ -380,7 +381,7 @@ What this command does:
 
 1. Accepts response from **mnenospark-proxy**
 2. Deletes the cron job associated with `<cron-id>` for `<object-key>`
-3. Print message to user: File `<s3-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system.
+3. Print message to user: File `<object-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system.
 4. Print message to user: Thank you for using mnemospark!
 
 ### wallet command

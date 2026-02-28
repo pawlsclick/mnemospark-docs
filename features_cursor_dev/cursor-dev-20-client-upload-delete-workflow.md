@@ -21,7 +21,7 @@ Implement the **mnemospark-client** behavior for `/cloud upload` and `/cloud del
 
 1. Keep: accept response from proxy.
 2. **New:** Look up the cron job associated with the deleted `<object-key>` (using object.log or whatever store holds cron-id ↔ object-key). Delete that cron job (remove from crontab, task scheduler, or in-memory scheduler) so no orphaned payment job remains.
-3. **New:** Return **two** user messages: (3) "File `<s3-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system." (4) "Thank you for using mnemospark!"
+3. **New:** Return **two** user messages: (3) "File `<object-key>` has been deleted from the cloud and the cron job `<cron-id>` has been deleted from your system." (4) "Thank you for using mnemospark!"
 
 **Cron/scheduler implementation note:** The client runs in Node (OpenClaw plugin). "Cron" can be implemented as: writing a crontab entry to a file under `~/.openclaw/mnemospark/` (e.g. `crontab.txt` or platform-specific), or using a Node scheduler (e.g. `node-cron` or a simple interval that persists across restarts via log). For delete, "delete the cron job" means remove that entry or unregister that job. Support at least macOS and Linux; Windows (Task Scheduler) can be best-effort or documented as future. Ensure cron-id is stored so delete can find and remove the right job.
 

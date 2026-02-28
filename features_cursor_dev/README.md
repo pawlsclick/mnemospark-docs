@@ -17,17 +17,17 @@ Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/doc
 
 ## Repo mapping (where to run the Cloud Agent)
 
-- **Backend features (01–10, 15–18, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo. Ensure the docs submodule is populated: in mnemospark-backend run `git submodule update --init` (or clone with `git clone --recurse-submodules`).
-- **Client features (11–14, 20, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
-- **Docs-only features (19):** Start the Cloud Agent from the **mnemospark-docs** repo. No submodule; edit files directly in this repo.
+- **Backend features (01–10, 15–18, 23, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo. Ensure the docs submodule is populated: in mnemospark-backend run `git submodule update --init` (or clone with `git clone --recurse-submodules`).
+- **Client features (11–14, 20, 22, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
+- **Docs-only features (19, 21):** Start the Cloud Agent from the **mnemospark-docs** repo. No submodule; edit files directly in this repo.
 
 The agent must work **only in the repo it was started in**. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository.
 
 | Features                      | Repo to run agent from | Notes                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01–10, 15–18, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md). |
-| 11–14, 20, auth-05–auth-07   | **mnemospark**         | Plugin/client. 20 = upload/delete workflow (cron job + cron-id).                                                                                                                                                                                                                                                                                             |
-| 19                            | **mnemospark-docs**    | Workflow doc and meta_docs (upload/delete order, cron-id). No code; markdown only.                                                                                                                                                                                                                                                                         |
+| 01–10, 15–18, 23, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md). 23 = verify object_key only. |
+| 11–14, 20, 22, auth-05–auth-07   | **mnemospark**         | Plugin/client. 20 = upload/delete workflow (cron job + cron-id). 22 = client/proxy object-key terminology.                                                                                                                                                                                                                                                                                                                   |
+| 19, 21                            | **mnemospark-docs**    | 19 = workflow doc and meta_docs (upload/delete order, cron-id). 21 = docs object-key terminology (replace s3-key). No code; markdown only.                                                                                                                                                                                                                                                                                   |
 
 **mnemospark proxy port:** For client features (11–14), the mnemospark proxy listens on **port 7120** by default. Agents and config should use `http://127.0.0.1:7120` when talking to the proxy (configurable via `MNEMOSPARK_PROXY_PORT`).
 
@@ -71,6 +71,7 @@ In mnemospark and mnemospark-backend, feature specs are under `.company/`. Use `
 - **18** (secrets: relayer key in Secrets Manager) after **04** (upload Lambda exists); implements [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md).
 - **11–14** (client) after backend routes exist.
 - **Auth (wallet proof):** auth-01 before auth-02 (authorizer must exist before attaching). auth-02 and auth-04 coordinate so Gateway and Lambdas switch coherently. auth-05 before auth-06 (signing module used by proxy). auth-06 depends on backend accepting wallet proof (auth-01, auth-02, auth-04). See [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md).
+- **21, 22, 23 (object-key terminology):** Can run in any order. 21 = docs (mnemospark-docs). 22 = client/proxy (mnemospark). 23 = backend verification (mnemospark-backend; no changes expected).
 
 ---
 
@@ -105,3 +106,6 @@ In mnemospark and mnemospark-backend, feature specs are under `.company/`. Use `
 | auth-07 | [cursor-dev-auth-07-client-docs-error-handling.md](cursor-dev-auth-07-client-docs-error-handling.md) | Client/docs — remove API key, 401/403 errors          |
 | 19      | [cursor-dev-19-workflow-upload-delete-cron-id.md](cursor-dev-19-workflow-upload-delete-cron-id.md)   | Workflow doc upload/delete order + meta_docs cron-id  |
 | 20      | [cursor-dev-20-client-upload-delete-workflow.md](cursor-dev-20-client-upload-delete-workflow.md)     | Client upload/delete workflow (cron job + cron-id)    |
+| 21      | [cursor-dev-21-docs-object-key-terminology.md](cursor-dev-21-docs-object-key-terminology.md)         | Docs: standardize on object-key (remove s3-key)       |
+| 22      | [cursor-dev-22-client-proxy-object-key-terminology.md](cursor-dev-22-client-proxy-object-key-terminology.md) | Client/proxy: object-key in help and user-facing text |
+| 23      | [cursor-dev-23-backend-verify-object-key-only.md](cursor-dev-23-backend-verify-object-key-only.md)     | Backend: verify object_key only (no changes expected) |
