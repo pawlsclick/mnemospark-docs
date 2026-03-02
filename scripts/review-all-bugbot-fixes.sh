@@ -40,6 +40,7 @@ printf "%-6s %-12s %-8s %s\n" "PR" "Fix Hash" "In Main?" "Summary"
 echo "----------------------------------------------------------------------"
 
 for pr in "${push_prs[@]}"; do
+  PR="$pr"
   export REPO PR LOCAL_REPO_DIR
   line=$("$SCRIPT_DIR/review-bugbot-fix.sh" 2>/dev/null | head -1)
   if [[ -z "$line" ]]; then
@@ -51,7 +52,7 @@ for pr in "${push_prs[@]}"; do
     printf "%-6s %-12s %-8s %s\n" "$pr" "$hash" "YES" "(already merged)"
   else
     hash=$(echo "$line" | grep -oE 'fix [0-9a-f]+' | sed 's/fix //')
-    summary=$(echo "$line" | sed -n 's/.*NOT in origin/main (\(.*\)).*/\1/p')
+    summary=$(echo "$line" | sed -n 's#.*NOT in origin/main (\(.*\)).*#\1#p')
     printf "%-6s %-12s %-8s %s\n" "$pr" "$hash" "NO" "${summary:-—}"
   fi
 done

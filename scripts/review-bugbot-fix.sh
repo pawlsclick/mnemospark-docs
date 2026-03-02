@@ -3,8 +3,16 @@
 # local or cached clone check if that commit is in origin/main and show diff if not.
 # Requires: gh, jq, and (for clone fallback) gh auth.
 # Usage: REPO=org/repo PR=123 [LOCAL_REPO_DIR=/path] ./scripts/review-bugbot-fix.sh
+#        or: ./scripts/review-bugbot-fix.sh REPO=org/repo PR=123 [LOCAL_REPO_DIR=/path]
 
 set -e
+
+# Accept KEY=VALUE from command line (e.g. PR=15) so they set env for this script
+for arg in "$@"; do
+  if [[ "$arg" == *=* ]]; then
+    export "$arg"
+  fi
+done
 
 REPO="${REPO:?Set REPO (e.g. pawlsclick/mnemospark-backend)}"
 PR="${PR:?Set PR (e.g. 15)}"
