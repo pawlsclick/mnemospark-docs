@@ -13,6 +13,9 @@ Ordered steps for initial setup and ongoing release management (npm + GitHub).
 
 1. Bump `version` in `package.json` (semver). Update `CHANGELOG.md` with the new version and changes.
 2. If using a sync script for openclaw.plugin.json, run it (or ensure `prepare`/build does); otherwise update `openclaw.plugin.json` version to match.
+ - Manual workflow after version/description changes  
+ - When you change version or description in package.json you should either:  
+ - Run npm install or npm run prepare (which triggers the sync script)
 3. Commit and push to main (e.g. "Release 0.2.0").
 4. Create tag `v<version>` (e.g. `v0.2.0`) and push: `git tag v0.2.0 && git push origin v0.2.0`.
 5. Verify the GitHub Action runs: GitHub Release is created with the packed tarball and npm publish succeeds.
