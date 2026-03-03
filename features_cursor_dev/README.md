@@ -94,10 +94,10 @@ In mnemospark and mnemospark-backend, feature specs are under `.company/`. Use `
 | 16      | [cursor-dev-16-cfn-observability.md](cursor-dev-16-cfn-observability.md)                             | CloudFormation: Observability                         |
 | 17      | [cursor-dev-17-cfn-cloudfront.md](cursor-dev-17-cfn-cloudfront.md)                                   | CloudFormation: CloudFront (optional)                 |
 | 18      | [cursor-dev-18-secrets-relayer-key.md](cursor-dev-18-secrets-relayer-key.md)                         | Secrets Manager for relayer private key               |
-| 11      | [cursor-dev-11-client-cloud-backup.md](cursor-dev-11-client-cloud-backup.md)                         | Client /cloud backup                                  |
-| 12      | [cursor-dev-12-client-price-storage.md](cursor-dev-12-client-price-storage.md)                       | Client /cloud price-storage                           |
-| 13      | [cursor-dev-13-client-upload.md](cursor-dev-13-client-upload.md)                                     | Client /cloud upload                                  |
-| 14      | [cursor-dev-14-client-ls-download-delete.md](cursor-dev-14-client-ls-download-delete.md)             | Client /cloud ls, download, delete                    |
+| 11      | [cursor-dev-11-client-cloud-backup.md](cursor-dev-11-client-cloud-backup.md)                         | Client /mnemospark cloud backup                       |
+| 12      | [cursor-dev-12-client-price-storage.md](cursor-dev-12-client-price-storage.md)                       | Client /mnemospark cloud price-storage                |
+| 13      | [cursor-dev-13-client-upload.md](cursor-dev-13-client-upload.md)                                     | Client /mnemospark cloud upload                       |
+| 14      | [cursor-dev-14-client-ls-download-delete.md](cursor-dev-14-client-ls-download-delete.md)             | Client /mnemospark cloud ls, download, delete         |
 | auth-01 | [cursor-dev-auth-01-lambda-authorizer.md](cursor-dev-auth-01-lambda-authorizer.md)                   | Lambda authorizer (X-Wallet-Signature)                |
 | auth-02 | [cursor-dev-auth-02-api-gateway-authorizer.md](cursor-dev-auth-02-api-gateway-authorizer.md)         | API Gateway — remove API key, attach authorizer, CORS |
 | auth-03 | [cursor-dev-auth-03-waf-rate-limits.md](cursor-dev-auth-03-waf-rate-limits.md)                       | WAF — rate limits for /price-storage                  |
