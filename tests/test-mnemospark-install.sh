@@ -143,10 +143,11 @@ test_uninstall_script() {
   assert_file "${MNEMO_WALLET}"
 
   # Run uninstall script from extension location
-  local uninstall_script="${OPENCLAW_DIR}/extensions/mnemospark/scripts/uninstall.sh"
+  local uninstall_script="${MNEMO_DIR}/scripts/uninstall.sh"
   if [ ! -f "${uninstall_script}" ]; then
     fail "Uninstall script not found at ${uninstall_script}"
   fi
+
 
   bash "${uninstall_script}"
 
