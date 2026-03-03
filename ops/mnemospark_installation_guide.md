@@ -151,6 +151,7 @@ This script:
 - Stops the local mnemospark proxy on port 7120 (if running).
 - Removes the mnemospark extension directory under `~/.openclaw/extensions/mnemospark`.
 - Cleans only mnemospark-specific entries from `~/.openclaw/openclaw.json` (does not touch other plugins).
+- The script also DOES NOT remove your wallet or the directory `~/.openclaw/mnemospark`.
 - Prints a reminder to restart OpenClaw:
 
   ```bash
