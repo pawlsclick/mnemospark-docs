@@ -52,7 +52,19 @@ test_default_install() {
 
   assert_not_exist "${OPENCLAW_DIR}/blockrun"
 
-  pass "Default install created mnemospark wallet with correct permissions"
+  # Idempotency: running default install again should not break wallet
+  info "Re-running default install to verify idempotency..."
+  npx mnemospark install --default
+
+  assert_dir "${MNEMO_DIR}"
+  assert_dir "${MNEMO_DIR}/wallet"
+  assert_file "${MNEMO_WALLET}"
+
+  local perms2
+  perms2=$(stat -c "%a" "${MNEMO_WALLET}")
+  [ "${perms2}" = "600" ] || fail "After second default install, wallet permissions expected 600, got ${perms2}"
+
+  pass "Default install is idempotent and preserves wallet with correct permissions"
 }
 
 test_standard_install_without_blockrun() {
@@ -66,7 +78,16 @@ test_standard_install_without_blockrun() {
   assert_file "${MNEMO_WALLET}"
   assert_not_exist "${OPENCLAW_DIR}/blockrun"
 
-  pass "Standard install without Blockrun behaves like default install"
+  # Idempotency: running standard install again with no Blockrun should remain safe
+  info "Re-running standard install (no Blockrun) to verify idempotency..."
+  npx mnemospark install --standard
+
+  assert_dir "${MNEMO_DIR}"
+  assert_dir "${MNEMO_DIR}/wallet"
+  assert_file "${MNEMO_WALLET}"
+  assert_not_exist "${OPENCLAW_DIR}/blockrun"
+
+  pass "Standard install without Blockrun is idempotent and behaves like default install"
 }
 
 test_standard_install_with_blockrun_reuse() {
@@ -86,6 +107,15 @@ test_standard_install_with_blockrun_reuse() {
   else
     info "Standard install created a separate wallet (contents differ); verify behavior manually if needed"
   fi
+
+  # Idempotency: running standard install again with Blockrun present should not corrupt or remove wallets
+  info "Re-running standard install (with Blockrun) to verify idempotency..."
+  npx mnemospark install --standard
+
+  assert_file "${BLOCKRUN_WALLET}"
+  assert_file "${MNEMO_WALLET}"
+
+  pass "Standard install with Blockrun present is idempotent (wallets remain available)"
 }
 
 test_cli_basics() {
@@ -118,6 +148,15 @@ test_uninstall_script() {
     fail "Uninstall script not found at ${uninstall_script}"
   fi
 
+  bash "${uninstall_script}"
+
+  # First uninstall: extension removed, wallet preserved
+  assert_not_exist "${OPENCLAW_DIR}/extensions/mnemospark"
+  assert_file "${MNEMO_WALLET}"
+  assert_not_exist "${OPENCLAW_DIR}/blockrun"
+
+  # Idempotency: running uninstall again should be a no-op and still succeed
+  info "Re-running uninstall script to verify idempotency..."
   bash "${uninstall_script}"
 
   assert_not_exist "${OPENCLAW_DIR}/extensions/mnemospark"
