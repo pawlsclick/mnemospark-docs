@@ -1,6 +1,6 @@
-# mnemospark-docs — single source of truth for .company
+# mnemospark-docs — single source of truth for docs
 
-This repo is the **canonical documentation** for mnemospark and mnemospark-backend. Both code repos reference it as a Git submodule at the path `.company`. Edit docs only here (or in a clone of this repo); do not edit the contents of `.company` inside mnemospark or mnemospark-backend.
+This repo is the **canonical documentation** for mnemospark and mnemospark-backend. The code repos no longer embed this repo as a `.company` Git submodule; instead, contributors work directly in **mnemospark-docs**. Edit docs only here (or in a clone of this repo); do not duplicate or maintain copies of these docs inside mnemospark or mnemospark-backend.
 
 ---
 

@@ -3,7 +3,7 @@
 **ID:** cursor-dev-26  
 **Repo:** mnemospark
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin). Do **not** open, clone, or require access to mnemospark-backend or mnemospark-docs; all code and references are in this repo and `.company/`. The spec for this feature is at `.company/features_cursor_dev/cursor-dev-26-mnemospark-wallet-command-and-env.md`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark (OpenClaw plugin). Do **not** open, clone, or require access to mnemospark-backend or other repositories. The canonical spec for this feature lives in the **mnemospark-docs** repo at `features_cursor_dev/cursor-dev-26-mnemospark-wallet-command-and-env.md`.
 
 **AWS:** When implementing or changing AWS services or resources, follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available when working on AWS-based services.
 
@@ -64,7 +64,7 @@ Implement the full mnemospark command-structure migration so mnemospark does not
 - [src/proxy.ts](src/proxy.ts) — error/help strings mentioning /cloud
 - [src/cli.ts](src/cli.ts) — help, install messages, proxy startup
 - [openclaw.plugin.json](openclaw.plugin.json) — configSchema.walletKey description
-- Plan: `.company/.cursor/plans/wallet-command-mnemospark-wallet-migration.plan.md` (in .company submodule, if present) or see mnemospark-docs repo.
+- Plan: `.cursor/plans/wallet-command-mnemospark-wallet-migration.plan.md` in this repo, or see the corresponding plan in the **mnemospark-docs** repo.
 
 ## Cloud Agent
 

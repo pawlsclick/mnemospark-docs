@@ -2,7 +2,7 @@
 
 Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent). Each file describes one task completable in one Cloud Agent run.
 
-**Product context:** [mnemospark_PRD.md](../mnemospark_PRD.md), [mnemospark_full_workflow.md](../mnemospark_full_workflow.md), [mnemospark_backend_api_spec.md](../mnemospark_backend_api_spec.md). Larger feature specs live in [.company/features/](../features/).
+**Product context:** [mnemospark_PRD.md](../mnemospark_PRD.md), [mnemospark_full_workflow.md](../mnemospark_full_workflow.md), [mnemospark_backend_api_spec.md](../mnemospark_backend_api_spec.md). Larger feature specs live in [features/](../features/).
 
 ---
 
@@ -10,14 +10,14 @@ Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/doc
 
 1. Pick a feature file below (or from the list in this directory).
 2. Start a **Cloud Agent** (Cloud dropdown in the agent input, or [cursor.com/agents](https://cursor.com/agents)).
-3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from mnemospark or mnemospark-backend, the feature file lives under the `.company` submodule. Always use the path `.company/features_cursor_dev/<filename>` (e.g. `.company/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`). Do not use `features_cursor_dev/...` without the `.company/` prefix.
+3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from any repo, reference the feature spec path in the **mnemospark-docs** repo (e.g. `features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
 4. The agent works on a **separate branch** and pushes for handoff; verify via "Checkout Branch" or "Open VM" as needed.
 
 ---
 
 ## Repo mapping (where to run the Cloud Agent)
 
-- **Backend features (01–10, 15–18, 23, 28, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo. Ensure the docs submodule is populated: in mnemospark-backend run `git submodule update --init` (or clone with `git clone --recurse-submodules`).
+- **Backend features (01–10, 15–18, 23, 28, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo, and also open the **mnemospark-docs** repo for the corresponding feature spec under `features_cursor_dev/`.
 - **Client features (11–14, 20, 22, 26, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
 - **Docs-only features (19, 21, 27):** Start the Cloud Agent from the **mnemospark-docs** repo. No submodule; edit files directly in this repo.
 
@@ -51,13 +51,13 @@ Each feature file includes:
 
 ## Path to feature files when running from a code repo
 
-In mnemospark and mnemospark-backend, feature specs are under `.company/`. Use `.company/features_cursor_dev/<feature-file>.md` when telling the agent which file to execute (e.g. `.company/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
+Feature specs live only in the **mnemospark-docs** repo under `features_cursor_dev/`. When running a Cloud Agent from `mnemospark` or `mnemospark-backend`, also open `mnemospark-docs` and reference the feature path there (e.g. `features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
 
 ---
 
 ## Documentation
 
-**Documentation:** The `.company` directory in mnemospark and mnemospark-backend is the **mnemospark-docs** Git submodule. When running a Cloud Agent from **mnemospark** or **mnemospark-backend**, do **not** edit any files under `.company`. All documentation changes (including API spec, feature specs, and READMEs under .company) must be made only in the **mnemospark-docs** repo. This keeps a single source of truth and avoids cross-repo submodule commits.
+**Documentation:** This repo (`mnemospark-docs`) is the single source of truth for mnemospark and mnemospark-backend documentation. When running a Cloud Agent from **mnemospark** or **mnemospark-backend**, do **not** edit docs in those repos; make all documentation changes (including API spec, feature specs, and READMEs) only in the **mnemospark-docs** repo.
 
 ---
 
