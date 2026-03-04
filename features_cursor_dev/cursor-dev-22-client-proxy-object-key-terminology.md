@@ -32,7 +32,7 @@ After completing the changes: **open a new branch** (e.g. from `main`), **commit
 
 ## References
 
-- [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — workflow (object-key as single term)
+- [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md) — workflow (object-key as single term)
 - [cursor-dev-21-docs-object-key-terminology.md](cursor-dev-21-docs-object-key-terminology.md) — docs alignment (run first or in parallel)
 
 ## Cloud Agent

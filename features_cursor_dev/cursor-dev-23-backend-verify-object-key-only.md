@@ -29,7 +29,7 @@ After completing the verification (and any minimal renames): **open a new branch
 
 ## References
 
-- [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — workflow (object-key terminology)
+- [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md) — workflow (object-key terminology)
 - Backend: `services/storage-upload/app.py`, `services/storage-ls/`, `services/storage-download/`, `services/storage-delete/`, `services/storage-housekeeping/`, `template.yaml`
 
 ## Cloud Agent

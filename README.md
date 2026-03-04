@@ -8,13 +8,13 @@ This directory holds the main product, workflow, and backend documentation for *
 
 ## Core documents
 
-| Doc                                                                                  | Description                                                                                                                         |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [mnemospark_product_spec_v3.md](./mnemospark_product_spec_v3.md)                     | Product specification v3: x402, S3, client-held encryption, MVP scope.                                                              |
-| [mnemospark_PRD.md](./mnemospark_PRD.md)                                             | Product requirements document: problem, goals, requirements (R1–R14), success metrics.                                              |
-| [mnemospark_full_workflow.md](./mnemospark_full_workflow.md)                         | End-to-end workflow: commands (`/cloud`, `/wallet`), client/proxy/backend steps, canonical source for slash commands and arguments. |
-| [mnemospark_backend_api_spec.md](./mnemospark_backend_api_spec.md)                   | Backend REST API: endpoints, auth, request/response, idempotency, error codes.                                                      |
-| [wallet_gen_payment_eip712.md](./wallet_gen_payment_eip712.md) | EIP-712 payment flow and wallet/signing for x402 (Base/USDC).                                                                       |
+| Doc                                                                                              | Description                                                                                                                         |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [mnemospark_product_spec_v3.md](./product_docs/mnemospark_product_spec_v3.md)                     | Product specification v3: x402, S3, client-held encryption, MVP scope.                                                              |
+| [mnemospark_PRD.md](./product_docs/mnemospark_PRD.md)                                             | Product requirements document: problem, goals, requirements (R1–R14), success metrics.                                              |
+| [mnemospark_full_workflow.md](./product_docs/mnemospark_full_workflow.md)                         | End-to-end workflow: commands (`/cloud`, `/wallet`), client/proxy/backend steps, canonical source for slash commands and arguments. |
+| [mnemospark_backend_api_spec.md](./product_docs/mnemospark_backend_api_spec.md)                   | Backend REST API: endpoints, auth, request/response, idempotency, error codes.                                                      |
+| [wallet_gen_payment_eip712.md](./product_docs/wallet_gen_payment_eip712.md) | EIP-712 payment flow and wallet/signing for x402 (Base/USDC).                                                                       |
 
 ## Directories
 
@@ -29,7 +29,7 @@ This directory holds the main product, workflow, and backend documentation for *
 
 ## Testing and proof of functionality
 
-**Required linters (CI):** ESLint (`src/`), Prettier (check), TypeScript (typecheck). See [mnemospark_PRD.md](./mnemospark_PRD.md) for success metrics.
+**Required linters (CI):** ESLint (`src/`), Prettier (check), TypeScript (typecheck). See [mnemospark_PRD.md](./product_docs/mnemospark_PRD.md) for success metrics.
 
 | PRD success metric    | How it is proven                                                                                             |
 | --------------------- | ------------------------------------------------------------------------------------------------------------ |

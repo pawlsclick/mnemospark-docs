@@ -12,7 +12,7 @@ Where stored: In ~/.openclaw/mnemospark/object.log (client adds cron job id and 
 How used: On /cloud delete, client finds the cron for that <object-key>, deletes it with <cron-id>, then shows the two user messages; avoids orphaned cron jobs.
 Style should match trans-id-payment-settement.md and quote-id-dynamodb.md.
 3. Other docs (no change or optional)
-install_guidelines.md — No update.
+[install_guidelines.md](../product_docs/install_guidelines.md) — No update.
 mnemospark_backend_api_spec.md — No update.
 cursor-dev-13, cursor-dev-14 — Can reference the new order/cron-id later; not required for this pass.
 4. Implementation order

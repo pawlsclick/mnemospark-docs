@@ -27,7 +27,7 @@ Do not change API field names or code; this is documentation and placeholder ter
 
 ## References
 
-- [mnemospark_full_workflow.md](../mnemospark_full_workflow.md) — full workflow (ls, download, delete sections)
+- [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md) — full workflow (ls, download, delete sections)
 - [cursor-dev-19-workflow-upload-delete-cron-id.md](cursor-dev-19-workflow-upload-delete-cron-id.md), [cursor-dev-20-client-upload-delete-workflow.md](cursor-dev-20-client-upload-delete-workflow.md), [upload_and_delete_workflow.md](upload_and_delete_workflow.md)
 
 ## Cloud Agent

@@ -2,7 +2,7 @@
 
 Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent). Each file describes one task completable in one Cloud Agent run.
 
-**Product context:** [mnemospark_PRD.md](../mnemospark_PRD.md), [mnemospark_full_workflow.md](../mnemospark_full_workflow.md), [mnemospark_backend_api_spec.md](../mnemospark_backend_api_spec.md). Larger feature specs live in [features/](../features/).
+**Product context:** [mnemospark_PRD.md](../product_docs/mnemospark_PRD.md), [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md), [mnemospark_backend_api_spec.md](../product_docs/mnemospark_backend_api_spec.md). Larger feature specs live in [features/](../features/).
 
 ---
 
@@ -25,7 +25,7 @@ The agent must work **only in the repo it was started in**. Do **not** open, clo
 
 | Features                      | Repo to run agent from | Notes                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01–10, 15–18, 23, 28, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md). 23 = verify object_key only. |
+| 01–10, 15–18, 23, 28, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md). 23 = verify object_key only. |
 | 11–14, 20, 22, 26, auth-05–auth-07   | **mnemospark**         | Plugin/client. 20 = upload/delete workflow (cron job + cron-id). 22 = client/proxy object-key terminology.                                                                                                                                                                                                                                                                                                                   |
 | 19, 21, 27                            | **mnemospark-docs**    | 19 = workflow doc and meta_docs (upload/delete order, cron-id). 21 = docs object-key terminology (replace s3-key). No code; markdown only.                                                                                                                                                                                                                                                                                   |
 
@@ -70,7 +70,7 @@ Feature specs live only in the **mnemospark-docs** repo under `features_cursor_d
 - **10** (housekeeping) after **04** (upload).
 - **18** (secrets: relayer key in Secrets Manager) after **04** (upload Lambda exists); implements [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md).
 - **11–14** (client) after backend routes exist.
-- **Auth (wallet proof):** auth-01 before auth-02 (authorizer must exist before attaching). auth-02 and auth-04 coordinate so Gateway and Lambdas switch coherently. auth-05 before auth-06 (signing module used by proxy). auth-06 depends on backend accepting wallet proof (auth-01, auth-02, auth-04). See [auth_no_api_key_wallet_proof_spec.md](../auth_no_api_key_wallet_proof_spec.md).
+- **Auth (wallet proof):** auth-01 before auth-02 (authorizer must exist before attaching). auth-02 and auth-04 coordinate so Gateway and Lambdas switch coherently. auth-05 before auth-06 (signing module used by proxy). auth-06 depends on backend accepting wallet proof (auth-01, auth-02, auth-04). See [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md).
 - **21, 22, 23 (object-key terminology):** Can run in any order. 21 = docs (mnemospark-docs). 22 = client/proxy (mnemospark). 23 = backend verification (mnemospark-backend; no changes expected).
 - **26, 27, 28 (mnemospark command structure):** 26 = mnemospark (client: /mnemospark wallet, /mnemospark cloud and subcommands, MNEMOSPARK_WALLET_KEY, resolution order). 27 = mnemospark-docs (docs and test scripts — workflow doc client commands, wallet/cloud/env naming). 28 = mnemospark-backend (verify no breakage, update doc refs to /mnemospark wallet and /mnemospark cloud). 27 and 28 depend on 26.
 
