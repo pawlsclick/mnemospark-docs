@@ -21,9 +21,7 @@ This directory holds the main product, workflow, and backend documentation for *
 | Directory                                          | Contents                                                                                                                                               |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [infrastructure_design/](./infrastructure_design/) | AWS design for securing the internet-facing backend (API Gateway, WAF, CloudFront, etc.).                                                              |
-| [features_cursor_dev/](./features_cursor_dev/)     | Cursor Cloud Agent feature specs: small, single-run tasks for backend and client (Lambdas, API Gateway, client upload/download, CloudFormation).       |
-| [features/](./features/)                           | Feature specs from product spec v3 + PRD: roadmap, x402 gateway, S3 backend, pricing, orchestrator, tenant provisioning, storage API, OpenClaw plugin. |
-| [devops_features/](./devops_features/)             | Antfarm feature-dev tasks for dev tooling (AWS CLI, pnpm, Git/gh config, verification script).                                                         |
+| [dev_docs/](./dev_docs/)                           | Development-focused docs: Cursor Cloud Agent feature specs, devops features, fix workflows, templates, and tests.                                      |
 | [knowledge/](./knowledge/)                         | Reference material: agentic AI best practices, Antfarm notes.                                                                                          |
 | [archive/](./archive/)                             | Superseded and design-phase root-level docs (older product specs, Q&A, encryption options, etc.). See [archive/README.md](./archive/README.md).        |
 

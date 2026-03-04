@@ -3,7 +3,7 @@
 **ID:** cursor-dev-28  
 **Repo:** mnemospark-backend
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend (Lambda, API Gateway, wallet-proof authorizer). Do **not** open, clone, or require access to mnemospark or other repositories. The canonical spec for this feature lives in the **mnemospark-docs** repo at `features_cursor_dev/cursor-dev-28-backend-verify-wallet-migration.md`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend (Lambda, API Gateway, wallet-proof authorizer). Do **not** open, clone, or require access to mnemospark or other repositories. The canonical spec for this feature lives in the **mnemospark-docs** repo at `dev_docs/features/cursor-dev-28-backend-verify-wallet-migration.md`.
 
 **AWS:** When implementing or changing AWS services or resources, follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available when working on AWS-based services.
 
@@ -28,7 +28,7 @@ Depends on cursor-dev-26 (mnemospark client uses `/mnemospark wallet`, `/mnemosp
 ## References
 
 - [services/wallet-authorizer/app.py](services/wallet-authorizer/app.py) — validates wallet proof; no dependency on BLOCKRUN_WALLET_KEY or /wallet
-- See the **mnemospark-docs** repo (`features_cursor_dev/` and `infrastructure_design/`) for backend-facing API or workflow docs.
+- See the **mnemospark-docs** repo (`dev_docs/features/` and `infrastructure_design/`) for backend-facing API or workflow docs.
 - Plan: See mnemospark-docs repo `.cursor/plans/wallet-command-mnemospark-wallet-migration.plan.md`.
 
 ## Cloud Agent

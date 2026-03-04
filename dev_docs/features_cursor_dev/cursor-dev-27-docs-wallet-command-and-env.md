@@ -29,13 +29,13 @@ Update all documentation and test scripts in mnemospark-docs to use the new mnem
 2. **Wallet command and env in other docs**
    - Search the repo for `/wallet` and wallet command references that describe mnemospark. Replace with `/mnemospark wallet` and `/mnemospark wallet export` as appropriate.
    - Replace references to `BLOCKRUN_WALLET_KEY` with `MNEMOSPARK_WALLET_KEY` in installation guide, workflow doc, and any other docs. Ensure docs state that mnemospark uses `MNEMOSPARK_WALLET_KEY` and `/mnemospark wallet`; `/wallet` is used by ClawRouter/Blockrun.
-   - Files to check: [ops/mnemospark_installation_guide.md](ops/mnemospark_installation_guide.md), [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md), any other markdown under ops/, features_cursor_dev/, or root.
+   - Files to check: [ops/mnemospark_installation_guide.md](ops/mnemospark_installation_guide.md), [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md), any other markdown under ops/, dev_docs/features/, or root.
 
 3. **Cloud command references**
    - Search the repo for `/cloud` in docs (help examples, "run /cloud upload", etc.). Replace with `/mnemospark cloud` (and subcommands) so all user-facing command examples are consistent with cursor-dev-26.
 
 4. **Test scripts**
-   - In [tests/](tests/): update any script or comment that refers to `/wallet`, `/cloud`, or `BLOCKRUN_WALLET_KEY` in the context of mnemospark to `/mnemospark wallet`, `/mnemospark cloud`, and `MNEMOSPARK_WALLET_KEY`. Update assertions if they check command output or env names.
+- In [test/](../tests/): update any script or comment that refers to `/wallet`, `/cloud`, or `BLOCKRUN_WALLET_KEY` in the context of mnemospark to `/mnemospark wallet`, `/mnemospark cloud`, and `MNEMOSPARK_WALLET_KEY`. Update assertions if they check command output or env names.
 
 5. **Consistency**
    - Ensure no doc in this repo tells users to run `/wallet` or `/cloud` for mnemospark or to set `BLOCKRUN_WALLET_KEY` for mnemospark; use `/mnemospark wallet`, `/mnemospark cloud` (and subcommands), and `MNEMOSPARK_WALLET_KEY` throughout.
@@ -44,7 +44,7 @@ Update all documentation and test scripts in mnemospark-docs to use the new mnem
 
 - [ops/mnemospark_installation_guide.md](ops/mnemospark_installation_guide.md)
 - [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md)
-- [tests/](tests/)
+- [test/](../tests/)
 - Plan: [.cursor/plans/wallet-command-mnemospark-wallet-migration.plan.md](.cursor/plans/wallet-command-mnemospark-wallet-migration.plan.md)
 
 ## Cloud Agent
@@ -57,9 +57,9 @@ Update all documentation and test scripts in mnemospark-docs to use the new mnem
   - [ ] All other occurrences of `/cloud` and `/wallet` in the workflow doc (headings, examples, instructions) updated to `/mnemospark cloud` and `/mnemospark wallet`.
   - [ ] All mnemospark wallet env references in docs use `MNEMOSPARK_WALLET_KEY` (no `BLOCKRUN_WALLET_KEY` for mnemospark).
   - [ ] Installation guide and any other docs updated for wallet, cloud, and env naming.
-  - [ ] Test scripts in tests/ updated to use `/mnemospark wallet`, `/mnemospark cloud`, and `MNEMOSPARK_WALLET_KEY` when describing or testing mnemospark.
+  - [ ] Test scripts in dev_docs/tests/ updated to use `/mnemospark wallet`, `/mnemospark cloud`, and `MNEMOSPARK_WALLET_KEY` when describing or testing mnemospark.
   - [ ] Docs and tests are consistent with cursor-dev-26 behavior.
 
 ## Task string (optional)
 
-Work only in mnemospark-docs. Update all docs and test scripts for the mnemospark command structure: (1) mnemospark_full_workflow.md — update "mnemospark-client commands" to list /mnemospark cloud, /mnemospark cloud help, backup, price-storage, upload, ls, download, delete, and /mnemospark wallet; replace every /cloud and /wallet in the doc with /mnemospark cloud and /mnemospark wallet. (2) Replace BLOCKRUN_WALLET_KEY with MNEMOSPARK_WALLET_KEY everywhere. (3) Update ops/mnemospark_installation_guide.md and any other docs. (4) Update tests/ scripts and assertions. Acceptance: [ ] workflow doc command list and all /cloud,/wallet refs updated; [ ] MNEMOSPARK_WALLET_KEY; [ ] installation guide and tests; [ ] consistent with cursor-dev-26.
+Work only in mnemospark-docs. Update all docs and test scripts for the mnemospark command structure: (1) mnemospark_full_workflow.md — update "mnemospark-client commands" to list /mnemospark cloud, /mnemospark cloud help, backup, price-storage, upload, ls, download, delete, and /mnemospark wallet; replace every /cloud and /wallet in the doc with /mnemospark cloud and /mnemospark wallet. (2) Replace BLOCKRUN_WALLET_KEY with MNEMOSPARK_WALLET_KEY everywhere. (3) Update ops/mnemospark_installation_guide.md and any other docs. (4) Update dev_docs/tests/ scripts and assertions. Acceptance: [ ] workflow doc command list and all /cloud,/wallet refs updated; [ ] MNEMOSPARK_WALLET_KEY; [ ] installation guide and tests; [ ] consistent with cursor-dev-26.

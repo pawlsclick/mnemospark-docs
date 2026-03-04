@@ -3,7 +3,7 @@
 **ID:** cursor-dev-21  
 **Repo:** mnemospark-docs
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-docs. Documentation and feature specs live here. Do **not** open, clone, or require access to mnemospark, mnemospark-backend, or any other repository. The spec for this feature is at `.company/features_cursor_dev/cursor-dev-21-docs-object-key-terminology.md` when run from a repo that has the docs submodule; when run from mnemospark-docs, the path is `features_cursor_dev/cursor-dev-21-docs-object-key-terminology.md`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-docs. Documentation and feature specs live here. Do **not** open, clone, or require access to mnemospark, mnemospark-backend, or any other repository. The spec for this feature is at `dev_docs/features/cursor-dev-21-docs-object-key-terminology.md` in this repo.
 
 **AWS:** When implementing or changing AWS services or resources (e.g. AWS CLI, CloudFormation/SAM templates, Lambda, API Gateway, DynamoDB), follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available in this environment and should be used when working on AWS-based services and resources.
 
@@ -18,7 +18,7 @@ Standardize terminology on **`<object-key>`** only; remove all uses of **`<s3-ke
      - delete command: same pattern (including the delete success message “File `<s3-key>` has been deleted...”).
    - Optionally add one sentence in the “mnemospark file locations” or “full workflow” section: `<object-key>` is the storage key for the object (the key under which it is stored in S3 and returned by the upload API).
 
-2. **features_cursor_dev/**
+2. **dev_docs/features/**
    - **cursor-dev-19-workflow-upload-delete-cron-id.md:** Replace the delete user message “File `<s3-key>` has been deleted...” with “File `<object-key>` has been deleted...”.
    - **cursor-dev-20-client-upload-delete-workflow.md:** Replace “File `<s3-key>` has been deleted...” with “File `<object-key>` has been deleted...” in the “Return **two** user messages” bullet.
    - **upload_and_delete_workflow.md:** No `<s3-key>` found; leave as-is or ensure any key placeholder is `<object-key>`.

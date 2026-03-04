@@ -10,14 +10,14 @@ Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/doc
 
 1. Pick a feature file below (or from the list in this directory).
 2. Start a **Cloud Agent** (Cloud dropdown in the agent input, or [cursor.com/agents](https://cursor.com/agents)).
-3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from any repo, reference the feature spec path in the **mnemospark-docs** repo (e.g. `features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
+3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from any repo, reference the feature spec path in the **mnemospark-docs** repo (e.g. `dev_docs/features/cursor-dev-auth-01-lambda-authorizer.md`).
 4. The agent works on a **separate branch** and pushes for handoff; verify via "Checkout Branch" or "Open VM" as needed.
 
 ---
 
 ## Repo mapping (where to run the Cloud Agent)
 
-- **Backend features (01–10, 15–18, 23, 28, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo, and also open the **mnemospark-docs** repo for the corresponding feature spec under `features_cursor_dev/`.
+- **Backend features (01–10, 15–18, 23, 28, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo, and also open the **mnemospark-docs** repo for the corresponding feature spec under `dev_docs/features/`.
 - **Client features (11–14, 20, 22, 26, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
 - **Docs-only features (19, 21, 27):** Start the Cloud Agent from the **mnemospark-docs** repo. No submodule; edit files directly in this repo.
 
@@ -51,7 +51,7 @@ Each feature file includes:
 
 ## Path to feature files when running from a code repo
 
-Feature specs live only in the **mnemospark-docs** repo under `features_cursor_dev/`. When running a Cloud Agent from `mnemospark` or `mnemospark-backend`, also open `mnemospark-docs` and reference the feature path there (e.g. `features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
+Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features/`. When running a Cloud Agent from `mnemospark` or `mnemospark-backend`, also open `mnemospark-docs` and reference the feature path there (e.g. `dev_docs/features/cursor-dev-auth-01-lambda-authorizer.md`).
 
 ---
 

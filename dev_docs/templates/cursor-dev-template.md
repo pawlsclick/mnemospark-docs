@@ -6,7 +6,7 @@ Use this template when **generating cursor-dev feature files** from a Cursor Pla
 
 - **One file per run:** Each cursor-dev file describes one completable unit of work (one agent run).
 - **Naming:** `cursor-dev-<ID>-<slug>.md`. Use a numeric ID for ordering (e.g. `01`, `02`) or a prefix + number (e.g. `auth-01`, `auth-02`). Slug = short kebab-case description.
-- **Output directory:** Always write new cursor-dev files to **features_cursor_dev/** (in this repo: `mnemospark-docs/features_cursor_dev/`). Do not create cursor-dev files in other directories.
+- **Output directory:** Always write new cursor-dev files to **dev_docs/features/** (in this repo: `mnemospark-docs/dev_docs/features/`). Do not create cursor-dev files in other directories.
 - **Order:** Assign IDs in execution order (1, 2, 3…). In **Scope**, add "Depends on <id>" when a task requires a previous task (e.g. "Depends on cursor-dev-09").
 - **Repo:** Set **Repo** and the **Workspace** paragraph so the agent runs only in the correct repo. Maintain a repo mapping (e.g. in a README) that says which IDs run from which repo.
 - **Handoff:** After a successful run, the agent (or user) opens a new branch, pushes, and creates a PR. Do not commit to main/master from the agent run.
@@ -55,7 +55,7 @@ Replace all `{{...}}` placeholders below. Remove optional sections that do not a
 | `{{REPO}}`                | Repo name the agent must run in                                | my-backend or my-client                                                                                  |
 | `{{REPO_CONTEXT}}`        | Optional sentence on what lives in this repo                   | Backend features (01–10) and design patterns live in this repo.                                          |
 | `{{SUBMODULE_PATH}}`      | Optional, e.g. " and `.company/`" if specs live in a submodule | and `.company/`.                                                                                         |
-| `{{SPEC_PATH}}`           | Optional path to this file inside the repo                     | The spec for this feature is at `.company/features_cursor_dev/cursor-dev-01-lambda-estimate-storage.md`.   |
+| `{{SPEC_PATH}}`           | Optional path to this file inside the repo                     | The spec for this feature is at `dev_docs/features/cursor-dev-01-lambda-estimate-storage.md`.   |
 | `{{SCOPE}}`               | What to build in this run only (one or more paragraphs)        | Implement the Lambda for POST /estimate/storage…                                                         |
 | `{{DEPENDS_ON}}`          | Optional. If needed: " Depends on {{ID}} (short description)." | Depends on cursor-dev-09 (DynamoDB).                                                                     |
 | `{{REFERENCES}}`          | Bullet list of doc/spec links (relative paths, § refs)         | - [api_spec.md](../api_spec.md) §4.1                                                                     |

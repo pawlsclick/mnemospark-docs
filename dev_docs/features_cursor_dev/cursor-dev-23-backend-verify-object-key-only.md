@@ -3,7 +3,7 @@
 **ID:** cursor-dev-23  
 **Repo:** mnemospark-backend
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend. Backend Lambdas and templates live here. Do **not** open, clone, or require access to mnemospark or any other repository; all code and references are in this repo and `.company/`. The spec for this feature is at `.company/features_cursor_dev/cursor-dev-23-backend-verify-object-key-only.md`.
+**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-backend. Backend Lambdas and templates live here. Do **not** open, clone, or require access to mnemospark or any other repository; all code and references are in this repo. The spec for this feature is at `dev_docs/features/cursor-dev-23-backend-verify-object-key-only.md` in the mnemospark-docs repo.
 
 **AWS:** When implementing or changing AWS services or resources (e.g. AWS CLI, CloudFormation/SAM templates, Lambda, API Gateway, DynamoDB), follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available in this environment and should be used when working on AWS-based services and resources.
 
