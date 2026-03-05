@@ -187,4 +187,17 @@ If you see **Config invalid** with `plugins.allow: plugin not found: mnemospark`
 
 Plugin registration is handled **only** by `openclaw plugins install mnemospark`. The `npx mnemospark install` command sets up your wallet and optional helper scripts; it does not register the plugin with OpenClaw.
 
+### "extension entry not found" or "extension entry escapes package directory"
+
+If `openclaw plugins install mnemospark` fails with **extension entry not found: ./dist/index.js** or **extension entry escapes package directory: ./dist/index.js**, the npm package you are installing was published without the built `dist/` folder. OpenClaw requires the plugin tarball to contain the built entry file.
+
+- **Fix:** Use a mnemospark version that was published with a build (the package uses `prepublishOnly` so new publishes include `dist/`). Update and reinstall:
+  ```bash
+  openclaw plugins install mnemospark@latest
+  ```
+- **Alternative (local build):** From a clone of the mnemospark repo, build and install from the directory or a tarball:
+  ```bash
+  cd /path/to/mnemospark && npm run build && openclaw plugins install .
+  ```
+
 ---
