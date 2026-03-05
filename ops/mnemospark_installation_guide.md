@@ -1,52 +1,56 @@
 # Installation Guide for mnemospark
 
-This guide provides instructions on how to install the `mnemospark` client, including its integration with the OpenClaw system.
+This guide explains how to install the mnemospark **OpenClaw plugin** and, optionally, set up your wallet via the mnemospark CLI. Plugin registration is handled **only** by OpenClaw; the `npx mnemospark install` command sets up your wallet and helper scripts only.
 
 ## Prerequisites
 
-Before proceeding, ensure you have the following installed:
+- **Node.js (LTS version recommended)** and **npm**
+- **OpenClaw**: Required for using mnemospark as a plugin (slash commands, proxy in gateway mode).
+- **Git**: Only if installing from source.
 
-- **Node.js (LTS version recommended)**: `mnemospark` is a Node.js-based application.
-- **npm (Node Package Manager)**: Usually comes bundled with Node.js.
-- **Git**: Required for cloning the repository or downloading source archives.
-- **OpenClaw (if integrating with OpenClaw)**: Ensure your OpenClaw environment is set up.
+## 1. Install the plugin in OpenClaw (required)
 
-## Installation options
-
-There are two primary ways to install `mnemospark`: via npm (recommended for most users) or from source (for developers). When installing via npm, there are two install flows with different wallet behaviors: **default install** and **standard install**.
-
-### Option 1: Install via npm (recommended)
-
-You typically invoke the installer via `npx`:
+Register mnemospark with OpenClaw so slash commands and the proxy are available when the gateway runs:
 
 ```bash
-npx mnemospark install --default
+openclaw plugins install mnemospark
 ```
 
-or:
+Then start (or restart) the gateway:
+
+```bash
+openclaw gateway start
+```
+
+After this, `/mnemospark wallet` and `/mnemospark cloud` are available in OpenClaw. The plugin does **not** write to `~/.openclaw/extensions/` itself; only `openclaw plugins install` does that.
+
+## 2. Wallet setup (optional)
+
+To create or reuse a Base wallet for mnemospark (payments and storage), run the mnemospark CLI installer. This does **not** register the plugin; it only sets up your wallet and copies helper scripts (e.g. uninstall) to `~/.openclaw/mnemospark/`.
 
 ```bash
 npx mnemospark install --standard
 ```
 
-#### Default install
+or, to always create a new wallet:
+
+```bash
+npx mnemospark install --default
+```
+
+If OpenClaw is on your PATH, the installer will offer to run `openclaw plugins install mnemospark` for you if the plugin is not yet installed.
+
+### Default install
 
 - **Command**: `npx mnemospark install --default`
-- **Behavior**: Creates a new Base wallet dedicated to mnemospark.
-- **Wallet location**: `~/.openclaw/mnemospark/wallet/wallet.key`
-- **Permissions**: The wallet key file is created with `chmod 600` so only your user can read/write it.
+- **Behavior**: Creates a new Base wallet at `~/.openclaw/mnemospark/wallet/wallet.key` (chmod 600).
 
-#### Standard install
+### Standard install
 
 - **Command**: `npx mnemospark install --standard`
-- **Behavior**:
-  - Checks for an existing legacy Blockrun wallet at `~/.openclaw/blockrun/wallet.key`.
-  - If that file exists, the installer offers to **reuse** the Blockrun wallet for mnemospark.
-  - If it does **not** exist (or you choose not to reuse it), the flow behaves like the **default install**, creating a new mnemospark wallet under `~/.openclaw/mnemospark/wallet/wallet.key`.
+- **Behavior**: If `~/.openclaw/blockrun/wallet.key` exists, prompts to reuse it for mnemospark; otherwise behaves like default install.
 
-Both install flows ultimately ensure that mnemospark has a wallet configured under your `~/.openclaw` directory, either by creating a new one or by reusing an existing Blockrun wallet.
-
-### Option 2: Install from source (for developers)
+## 3. Install from source (for developers)
 
 If you intend to contribute to `mnemospark` or need the latest development version, you can install it from source.
 
@@ -125,26 +129,15 @@ This command will download and install the latest published version of `mnemospa
 
 ## OpenClaw integration
 
-`mnemospark` is designed as an OpenClaw plugin. When installed, OpenClaw can detect and manage it.
-
-The `openclaw.plugin.json` file within the `mnemospark` package exposes metadata (including the `version`) that OpenClaw uses to discover and track the plugin. When you run:
-
-```bash
-openclaw update
-```
-
-OpenClaw’s own update mechanism can detect new versions of `mnemospark` published to npm based on this metadata. No additional manual configuration is required in `mnemospark` beyond installing/updating the package itself.
+Plugin registration is done **only** via `openclaw plugins install mnemospark`. Do not add `mnemospark` to `plugins.allow` or `plugins.entries` manually unless the plugin is already discoverable (i.e. installed via that command). Use `openclaw plugins list` and `openclaw plugins info mnemospark` to confirm. After installing or updating the plugin, restart the gateway.
 
 ## Uninstalling mnemospark
 
-There is a dedicated uninstall script installed alongside the mnemospark OpenClaw extension.
+If you ran `npx mnemospark install`, a copy of the uninstall script was placed at `~/.openclaw/mnemospark/scripts/uninstall.sh`. Run it with:
 
-- **Location**: `~/.openclaw/extensions/mnemospark/scripts/uninstall.sh`
-- **How to run**:
-
-  ```bash
-  bash ~/.openclaw/extensions/mnemospark/scripts/uninstall.sh
-  ```
+```bash
+bash ~/.openclaw/mnemospark/scripts/uninstall.sh
+```
 
 This script:
 
@@ -159,5 +152,39 @@ This script:
   ```
 
 After running the script and restarting the OpenClaw gateway, mnemospark is fully uninstalled from your OpenClaw environment.
+
+## Troubleshooting
+
+### "plugin not found: mnemospark" or plugin not loading
+
+If you see **Config invalid** with `plugins.allow: plugin not found: mnemospark`, or OpenClaw does not show mnemospark slash commands, the usual cause is a **partial or stale** plugin directory that blocks the official install. Fix it by cleaning up and reinstalling via OpenClaw only.
+
+**Cleanup steps (run in order):**
+
+1. **Remove mnemospark from OpenClaw config** so the gateway can start:
+   - Edit `~/.openclaw/openclaw.json` and remove any `plugins.allow: ["mnemospark"]` (or the whole `plugins` block if that was the only content). Save and exit.
+
+2. **Delete the stale plugin directory:**
+   ```bash
+   rm -rf ~/.openclaw/extensions/mnemospark
+   ```
+
+3. **Confirm it is gone:**
+   ```bash
+   ls ~/.openclaw/extensions/
+   ```
+   You should not see a `mnemospark` directory.
+
+4. **Install mnemospark the official way:**
+   ```bash
+   openclaw plugins install mnemospark
+   ```
+
+5. **Restart the gateway:**
+   ```bash
+   openclaw gateway start
+   ```
+
+Plugin registration is handled **only** by `openclaw plugins install mnemospark`. The `npx mnemospark install` command sets up your wallet and optional helper scripts; it does not register the plugin with OpenClaw.
 
 ---
