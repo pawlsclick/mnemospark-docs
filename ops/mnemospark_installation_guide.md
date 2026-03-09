@@ -22,7 +22,7 @@ Then start (or restart) the gateway:
 openclaw gateway start
 ```
 
-After this, `/mnemospark wallet` and `/mnemospark cloud` are available in OpenClaw. The plugin does **not** write to `~/.openclaw/extensions/` itself; only `openclaw plugins install` does that.
+After this, `/mnemospark-wallet` and `/mnemospark-cloud` are available in OpenClaw (they appear in the slash command list when you type `/`). The plugin does **not** write to `~/.openclaw/extensions/` itself; only `openclaw plugins install` does that.
 
 ## 2. Wallet setup (optional)
 
