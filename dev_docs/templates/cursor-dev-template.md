@@ -1,15 +1,23 @@
 # Cursor Dev template
 
-Use this template when **generating cursor-dev feature files** from a Cursor Plan. Each cursor-dev file is intended for **one** Cursor Agent or Cursor Cloud Agent run: the agent runs in a **single repo**, completes the scope below, and hands off via a **new branch and PR** after success.
+Use this template when **generating cursor-dev feature files** or **fixes** to the existing codebase. Each file is intended for **one** Cursor Agent or Cursor Cloud Agent run: the agent runs in a **single repo**, completes the scope below, and hands off via a **new branch and PR** after success.  
+
+## File naming logic 
+- If this is a new feature:  
+- **Naming:** `cursor-dev-<ID>-<slug>.md`. Use a numeric ID for ordering (e.g. `01`, `02`) or a prefix + number (e.g. `auth-01`, `auth-02`). Slug = short kebab-case description.
+- **Output directory:** Always write new cursor-dev files to **dev_docs/features_cursor_dev/** (in this repo: `mnemospark-docs/dev_docs/features_cursor_dev/`). Do not create cursor-dev files in other directories.
+
+- If this is a bug fix or code change:  
+- **Naming:** `fix-<ID>-<slug>.md`. Use a numeric ID for ordering (e.g. `01`, `02`) or a prefix + number (e.g. `bug-01`, `bug-02`). Slug = short kebab-case description.
+- **Output directory:** Always write new fix files to **dev_docs/fix/** (in this repo: `mnemospark-docs/dev_docs/fix/`). Do not create cursor-dev files in other directories.
+
 
 ## Instructions for plan / author
 
-- **One file per run:** Each cursor-dev file describes one completable unit of work (one agent run).
-- **Naming:** `cursor-dev-<ID>-<slug>.md`. Use a numeric ID for ordering (e.g. `01`, `02`) or a prefix + number (e.g. `auth-01`, `auth-02`). Slug = short kebab-case description.
-- **Output directory:** Always write new cursor-dev files to **dev_docs/features/** (in this repo: `mnemospark-docs/dev_docs/features/`). Do not create cursor-dev files in other directories.
-- **Order:** Assign IDs in execution order (1, 2, 3…). In **Scope**, add "Depends on <id>" when a task requires a previous task (e.g. "Depends on cursor-dev-09").
+- **One file per run:** Each file describes one completable unit of work (one agent run).  
+- **Order:** Assign IDs in execution order (1, 2, 3…). In **Scope**, add "Depends on <id>" when a task requires a previous task (e.g. "Depends on cursor-dev-09", or "fix-02").
 - **Repo:** Set **Repo** and the **Workspace** paragraph so the agent runs only in the correct repo. Maintain a repo mapping (e.g. in a README) that says which IDs run from which repo.
-- **Handoff:** After a successful run, the agent (or user) opens a new branch, pushes, and creates a PR. Do not commit to main/master from the agent run.
+- **Handoff:** After a successful run, the agent opens a new branch from main, pushes, and creates a PR. Do not commit to main from the agent run.
 
 Replace all `{{...}}` placeholders below. Remove optional sections that do not apply (e.g. **Start** if nothing to start, **Depends on** if no dependencies).
 
@@ -20,7 +28,7 @@ Replace all `{{...}}` placeholders below. Remove optional sections that do not a
 **ID:** {{ID}}  
 **Repo:** {{REPO}}
 
-**Workspace for Cloud Agent:** Work only in **this repo** (the repo you were started in). This repo is {{REPO}}. {{REPO_CONTEXT}} Do **not** open, clone, or require access to any other repository; all code and references are in this repo{{SUBMODULE_PATH}}. {{SPEC_PATH}}
+**Workspace for Agent:** Work only in **this repo** (the repo you were started in). This repo is {{REPO}}. {{REPO_CONTEXT}} Do **not** clone, or require access to any other repository; all code and references are in this file References: {{References}}
 
 **AWS:** When implementing or changing AWS services or resources (e.g. AWS CLI, CloudFormation/SAM templates, Lambda, API Gateway, DynamoDB), follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available in this environment and should be used when working on AWS-based services and resources.
 
@@ -32,7 +40,7 @@ Replace all `{{...}}` placeholders below. Remove optional sections that do not a
 
 {{REFERENCES}}
 
-## Cloud Agent
+## Agent
 
 - **Install (idempotent):** {{INSTALL}}
 - **Start (if needed):** {{START}}
