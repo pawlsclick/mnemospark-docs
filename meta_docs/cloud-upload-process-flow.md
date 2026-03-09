@@ -93,26 +93,7 @@ Returns an `UploadPayload` object with `mode`, `content_base64` (inline only), `
 
 - **URL**: `POST http://127.0.0.1:7120/mnemospark/upload`
 - **Headers**: `Content-Type: application/json`, `Idempotency-Key: <uuid>`, plus x402 payment headers if cached.
-- **Body** (JSON):
-  ```json
-  {
-    "quote_id": "...",
-    "wallet_address": "...",
-    "object_id": "...",
-    "object_id_hash": "...",
-    "quoted_storage_price": 1.25,
-    "payload": {
-      "mode": "inline",
-      "content_base64": "<base64-encrypted-content>",
-      "content_sha256": "...",
-      "content_length_bytes": 12345,
-      "wrapped_dek": "<base64-wrapped-key>",
-      "encryption_algorithm": "AES-256-GCM",
-      "bucket_name_hint": "mnemospark-<hash>",
-      "key_store_path_hint": "~/.openclaw/mnemospark/keys/<hash>.key"
-    }
-  }
-  ```
+- **Body** (JSON): The client sends the `StorageUploadRequest` with a nested `payload` object to the proxy. The proxy's `forwardStorageUploadToBackend()` then flattens this into the backend's expected flat schema before forwarding (see section 2.2, Step 5).
 
 #### Step 8 -- Presigned Upload (if applicable)
 
@@ -167,13 +148,30 @@ Calculates `requiredMicros` from `quoted_storage_price * 1,000,000`. Queries the
 
 If balance is low but sufficient, triggers an `onLowBalance` callback (logged as a warning).
 
-#### Step 5 -- Forward to Backend
+#### Step 5 -- Forward to Backend (Payload Flattening)
 
 `forwardStorageUploadToBackend(requestPayload, options)` at `src/cloud-price-storage.ts` line 416:
 
 - **URL**: `POST ${MNEMOSPARK_BACKEND_API_BASE_URL}/storage/upload`
 - **Headers**: `Content-Type: application/json`, `X-Wallet-Signature`, `Idempotency-Key`, `PAYMENT-SIGNATURE` / `x-payment` (forwarded from client)
-- **Body**: The `StorageUploadRequest` JSON, forwarded unchanged.
+- **Body**: The function builds a flat `backendRequestBody` from the nested `StorageUploadRequest` before serializing. It promotes: `payload.wrapped_dek` to top-level `wrapped_dek`, `payload.content_base64` to top-level `ciphertext` (inline mode only), `payload.mode` to top-level `mode`, and `payload.content_sha256`, `payload.content_length_bytes`, `payload.encryption_algorithm` to top level. The nested `payload` key and `quoted_storage_price` are removed. For presigned mode, `ciphertext` is omitted.
+
+  Flat body sent to backend (inline example):
+  ```json
+  {
+    "quote_id": "...",
+    "wallet_address": "...",
+    "object_id": "...",
+    "object_id_hash": "...",
+    "ciphertext": "<base64-encrypted-content>",
+    "wrapped_dek": "<base64-wrapped-key>",
+    "mode": "inline",
+    "content_sha256": "...",
+    "content_length_bytes": 12345,
+    "encryption_algorithm": "AES-256-GCM",
+    "object_key": "..."
+  }
+  ```
 
 #### Step 6 -- Response Relay
 
@@ -183,13 +181,13 @@ Forwards the backend's status code, body, and payment-related headers (`PAYMENT-
 
 ### 2.3 Backend (mnemospark-backend)
 
-**Entry point**: `StorageUploadFunction` Lambda, handler at `services/storage-upload/app.py` line 1086.
+**Entry point**: `StorageUploadFunction` Lambda, handler at `services/storage-upload/app.py` line 1272.
 
-**Route**: `POST /storage/upload` (defined in `template.yaml` line 563).
+**Route**: `POST /storage/upload` (defined in `template.yaml` line 567).
 
 #### Step 1 -- API Gateway Request Validation
 
-API Gateway validates the request body against the `StorageUploadRequest` JSON Schema model (`template.yaml` lines 374-401) with `ValidateBody: true`. Required top-level fields: `quote_id`, `wallet_address`, `object_id`, `object_id_hash`, `ciphertext`, `wrapped_dek`.
+API Gateway validates the request body against the `StorageUploadRequest` JSON Schema model (`template.yaml` lines 377-409) with `ValidateBody: true`. Required top-level fields: `quote_id`, `wallet_address`, `object_id`, `object_id_hash`, `wrapped_dek`. Note: `ciphertext` is optional (not required) to support presigned upload mode. Additional optional properties: `mode`, `content_sha256`, `content_length_bytes`, `object_key`, `provider`, `location`.
 
 #### Step 2 -- Lambda Authorizer (Wallet Signature Verification)
 
@@ -205,23 +203,27 @@ API Gateway validates the request body against the `StorageUploadRequest` JSON S
 
 #### Step 3 -- Input Parsing
 
-`parse_input(event)` at line 399:
+`parse_input(event)` at line 426:
 
 - Decodes the JSON body via `_collect_request_params`.
 - Extracts and validates: `quote_id`, `wallet_address` (normalized to lowercase), `object_id`, `object_id_hash`, `object_key` (defaults to `object_id`), `provider` (defaults to `"aws"`), `location` (defaults to `AWS_REGION`).
-- Base64-decodes `ciphertext` (or `content` as fallback).
+- Reads `mode` from params (defaults to `"inline"` if absent; must be `"inline"` or `"presigned"`).
+- For inline mode (or when a `ciphertext`/`content` field is present): base64-decodes `ciphertext`. For presigned mode without `ciphertext`: `ciphertext` is set to `None`.
+- Reads optional `content_sha256` and `content_length_bytes`.
 - Validates `wrapped_dek` as base64.
 - Extracts `Idempotency-Key` and payment headers.
+- Logs `upload_request_parsed` at INFO level with `quote_id`, `wallet_address`, `object_id`, and `mode`.
 
 #### Step 4 -- Authorized Wallet Double-Check
 
-`_require_authorized_wallet(event, request.wallet_address)` at line 1096 extracts `walletAddress` from `event.requestContext.authorizer` and compares it to the request body's `wallet_address`. Mismatch returns 403.
+`_require_authorized_wallet(event, request.wallet_address)` extracts `walletAddress` from `event.requestContext.authorizer` and compares it to the request body's `wallet_address`. Mismatch returns 403. Logs `authorized_wallet_confirmed` at DEBUG level.
 
 #### Step 5 -- Idempotency Check (First Pass)
 
 If `Idempotency-Key` header is present, checks the `upload-idempotency` DynamoDB table:
 
-- If a `completed` entry exists with matching `request_hash`, returns the cached 200 response immediately (short-circuit).
+- If a `completed` entry exists with matching `request_hash`, returns the cached 200 response immediately (short-circuit). For presigned mode, a fresh presigned URL is regenerated even on cache hits. Logs `idempotency_cache_hit`.
+- If a `retryable` entry exists (from a previous S3 failure after payment), the handler resumes the upload using the cached payment result, skipping re-verification. Logs `idempotency_retryable_upload_resume`.
 - If `in_progress` or hash mismatch, returns `409 conflict`.
 
 #### Step 6 -- Quote Lookup and Validation
@@ -242,7 +244,9 @@ If `Idempotency-Key` is present, `_claim_idempotency_lock` atomically writes an 
 
 #### Step 8 -- Payment Verification and Settlement
 
-`verify_and_settle_payment()` at line 791:
+If this is a retryable upload (S3 failure after previous successful payment), payment verification is skipped and the cached `PaymentVerificationResult` is restored from the idempotency record. Logs `payment_settlement_already_confirmed`.
+
+Otherwise, `verify_and_settle_payment()` runs:
 
 1. If no payment header is present, raises `PaymentRequiredError` (402) with payment requirements in `PAYMENT-REQUIRED` / `x-payment-required` headers containing: `scheme`, `network` (eip155:8453), `asset` (USDC address), `payTo` (recipient wallet), `amount` (in microdollars).
 2. Decodes the base64-encoded JSON payment payload.
@@ -250,25 +254,38 @@ If `Idempotency-Key` is present, `_claim_idempotency_lock` atomically writes an 
 4. Validates: `from` matches wallet, `to` matches configured recipient, asset matches, network matches, amount >= quote amount, `validAfter <= now < validBefore`.
 5. Recovers the EIP-712 signer via `eth_account` and verifies it matches `wallet_address`.
 6. Settles payment based on `MNEMOSPARK_PAYMENT_SETTLEMENT_MODE`:
-   - **mock** (default): generates a deterministic pseudo-tx-id via SHA-256 of `quote_id:signature:nonce:value`. No on-chain transaction.
-   - **onchain**: retrieves relayer private key from AWS Secrets Manager, builds and submits a `transferWithAuthorization` transaction to Base mainnet via `web3.py`, waits for receipt (180s timeout), verifies `receipt.status == 1`, returns actual tx hash.
+   - **onchain** (default): retrieves relayer private key from AWS Secrets Manager, builds and submits a `transferWithAuthorization` transaction to Base mainnet via `web3.py`, waits for receipt (180s timeout), verifies `receipt.status == 1`, returns actual tx hash.
+   - **mock** (requires explicit env var override): generates a deterministic pseudo-tx-id via SHA-256 of `quote_id:signature:nonce:value`. No on-chain transaction. A WARNING is logged when mock mode is active.
 
-#### Step 9 -- S3 Upload
+Logs `payment_verification_succeeded` at INFO level with `trans_id`, settlement mode, `amount`, and `network`.
 
-`_upload_ciphertext_to_s3()` at line 1025:
+#### Step 9 -- S3 Upload (mode-dependent)
 
+The handler branches on `mode`:
+
+**Presigned mode** (`mode == "presigned"`):
 1. Computes bucket name: `mnemospark-{sha256(wallet_address)[:16]}`.
-2. Validates bucket name against S3 naming rules.
-3. Creates the bucket if it does not exist (`head_bucket` + `create_bucket`).
-4. `s3:PutObject` with ciphertext as `Body` and `wrapped-dek` in object `Metadata`.
+2. Validates bucket name and ensures bucket exists.
+3. Generates a presigned S3 PUT URL via `s3_client.generate_presigned_url('put_object', ...)` with a 1-hour TTL.
+4. Logs `presigned_url_generated` at INFO level.
+5. Does NOT write ciphertext to S3 -- the client will PUT directly using the presigned URL after receiving the response.
+
+**Inline mode** (`mode == "inline"`, default):
+1. Requires `ciphertext` (raises `BadRequestError` if `None`).
+2. `_upload_ciphertext_to_s3()`: computes bucket name `mnemospark-{sha256(wallet_address)[:16]}`, validates bucket name, creates bucket if absent, executes `s3:PutObject` with ciphertext as `Body` and `wrapped-dek` in object `Metadata`.
+3. The S3 upload is wrapped in its own `try/except`. On failure:
+   - Marks the idempotency record as `retryable` (preserving payment context) so a retry can re-attempt the S3 upload without re-paying.
+   - Logs `s3_upload_failed_after_payment` at ERROR level.
+   - Returns **207 Multi-Status** with `"upload_failed": true`, the `trans_id`, and payment response headers -- signaling that payment succeeded but storage did not.
+4. On success, logs `s3_upload_succeeded` at INFO level.
 
 #### Step 10 -- Transaction Log
 
-`_write_transaction_log()` at line 1045 writes to the `upload-transaction-log` DynamoDB table with: `quote_id`, `trans_id`, timestamp, payment details (network, asset, amount, status=confirmed, recipient), wallet info, object metadata, provider, bucket, location.
+`_write_transaction_log()` writes to the `upload-transaction-log` DynamoDB table with: `quote_id`, `trans_id`, timestamp, payment details (network, asset, amount, status=confirmed, recipient), wallet info, object metadata, provider, bucket, location. Logs `transaction_log_written` at INFO level.
 
 #### Step 11 -- Quote Deletion
 
-Best-effort `delete_item` on the quotes table for the consumed `quote_id` (line 1166). Failures are silently caught.
+Best-effort `delete_item` on the quotes table for the consumed `quote_id`. Failures are silently caught. Logs `consumed_quote_deleted` at DEBUG level.
 
 #### Step 12 -- Idempotency Completion and Response
 
@@ -288,6 +305,14 @@ Returns 200 with:
   "provider": "aws",
   "bucket_name": "mnemospark-a3f1b2c4d5e6f7a8",
   "location": "us-east-1"
+}
+```
+
+For presigned mode, the response additionally includes:
+```json
+{
+  "upload_url": "https://mnemospark-a3f1b2c4.s3.amazonaws.com/backup.tar.gz?X-Amz-...",
+  "upload_headers": { "Content-Type": "application/octet-stream" }
 }
 ```
 
@@ -337,7 +362,7 @@ Backend 200 + payment-response headers
 
 | File | Role |
 |---|---|
-| `services/storage-upload/app.py` | Main upload Lambda handler (1231 lines): input parsing, wallet authorization, idempotency, quote validation, payment verification/settlement, S3 upload, transaction log |
+| `services/storage-upload/app.py` | Main upload Lambda handler (~1690 lines): input parsing, wallet authorization, idempotency (with retryable state), quote validation, payment verification/settlement (onchain default), S3 upload (inline + presigned), S3 failure rollback (207), transaction log, structured JSON logging |
 | `services/storage-upload/requirements.txt` | Dependencies: `boto3`, `eth-account`, `web3` |
 | `services/wallet-authorizer/app.py` | Lambda authorizer: EIP-712 wallet proof verification, signature age checking |
 | `template.yaml` | SAM template: route definitions, IAM roles, DynamoDB tables (`QuotesTable`, `UploadTransactionLogTable`, `UploadIdempotencyTable`), environment variables, API Gateway models, CloudWatch alarms |
@@ -375,7 +400,13 @@ Backend 200 + payment-response headers
 
 ### Backend (AWS)
 
-- **Lambda Log Groups**: `StorageUploadFunctionLogGroup` with configurable retention (`ObservabilityLogRetentionDays`, default 30 days). Note: the handler has no explicit `print()` or `logging` calls -- all observability comes from Lambda runtime auto-logging.
+- **Lambda Structured Logging**: The handler uses `logging.getLogger(__name__)` with a `_log_event()` helper that emits structured JSON with an `event` key. Key events logged:
+  - INFO: `upload_request_parsed`, `authorized_wallet_confirmed`, `quote_lookup_succeeded`, `idempotency_lock_acquired`, `payment_verification_succeeded`, `presigned_url_generated`, `s3_upload_succeeded`, `transaction_log_written`.
+  - WARNING: `upload_request_forbidden`, `upload_request_bad_request`, `upload_quote_not_found`, `upload_payment_required`, `upload_idempotency_conflict`, mock-mode activation warning.
+  - ERROR: `s3_upload_failed_after_payment`, `upload_internal_error`, `idempotency_mark_retryable_failed`.
+  - DEBUG: `authorized_wallet_confirmed`, `consumed_quote_deleted`.
+  - Retryable upload flow: `idempotency_retryable_upload_resume`, `idempotency_cache_hit`, `payment_settlement_already_confirmed`, `quote_context_restored_from_idempotency`.
+- **Lambda Log Groups**: `StorageUploadFunctionLogGroup` with configurable retention (`ObservabilityLogRetentionDays`, default 30 days).
 - **API Gateway Access Logs**: `ApiGatewayAccessLogsLogGroup` capturing request metadata (requestId, IP, method, path, status, latency).
 - **CloudTrail**: `MnemosparkCloudTrail` for management event auditing.
 - **CloudWatch Alarms**: 4XX errors, 5XX errors, throttling, and latency alarms.
@@ -442,12 +473,13 @@ Thank you for using mnemospark!
 
 | Status | Error Key | Condition |
 |---|---|---|
+| 207 | `upload_failed` | S3 upload failed after payment was settled. Payment is confirmed (`trans_id` included in response) but file was not stored. Idempotency record is marked `retryable` -- client can retry with the same Idempotency-Key to re-attempt S3 upload without re-paying. |
 | 400 | `Bad request` | Missing/invalid fields, hash mismatch, validation failure |
 | 402 | `payment_required` | No payment header, invalid payment, amount too low, expired authorization, signer mismatch |
 | 403 | `forbidden` | Missing or mismatched wallet authorizer context |
 | 404 | `quote_not_found` | Quote missing or expired |
 | 409 | `conflict` | Idempotency-Key reuse with different payload, or upload already in progress |
-| 500 | `Internal error` | Unhandled exceptions (S3 failure, DynamoDB failure, relayer error, etc.) |
+| 500 | `Internal error` | Unhandled exceptions (DynamoDB failure, relayer error, etc.) |
 
 The 402 response includes `PAYMENT-REQUIRED` and `x-payment-required` headers with base64-encoded payment requirements:
 
@@ -485,9 +517,10 @@ sequenceDiagram
     Note over Client: Verify archive exists and hash matches
     Note over Client: Resolve wallet key, verify address
     Note over Client: Encrypt file (AES-256-GCM envelope)
+    Note over Client: Select mode: inline (<4.5MB) or presigned
     Note over Client: Create x402 payment-aware fetch
 
-    Client->>Proxy: POST /mnemospark/upload<br/>{quote_id, wallet_address, object_id,<br/>object_id_hash, quoted_storage_price, payload}
+    Client->>Proxy: POST /mnemospark/upload<br/>{quote_id, wallet_address, object_id,<br/>object_id_hash, quoted_storage_price,<br/>payload: {mode, content_base64?, wrapped_dek, ...}}
 
     Note over Proxy: Parse JSON, validate fields
     Note over Proxy: Enforce wallet ownership
@@ -499,14 +532,16 @@ sequenceDiagram
     end
 
     Note over Proxy: Sign EIP-712 MnemosparkRequest<br/>(X-Wallet-Signature header)
+    Note over Proxy: Flatten payload to backend schema
 
-    Proxy->>APIGW: POST /storage/upload<br/>+ X-Wallet-Signature<br/>+ Idempotency-Key<br/>+ PAYMENT-SIGNATURE
+    Proxy->>APIGW: POST /storage/upload<br/>{quote_id, wallet_address, ciphertext?,<br/>wrapped_dek, mode, ...}<br/>+ X-Wallet-Signature<br/>+ Idempotency-Key<br/>+ PAYMENT-SIGNATURE
 
     APIGW->>Auth: Authorize (X-Wallet-Signature)
     Note over Auth: Decode envelope, verify EIP-712<br/>signature, check age, match wallet
     Auth-->>APIGW: Allow (walletAddress in context)
 
     APIGW->>Upload: Invoke Lambda
+    Note over Upload: LOG: upload_request_parsed
 
     Note over Upload: parse_input, verify authorized wallet
 
@@ -514,13 +549,20 @@ sequenceDiagram
 
     alt Cached completed result
         DDB-->>Upload: Completed entry found
+        Note over Upload: LOG: idempotency_cache_hit
         Upload-->>APIGW: 200 (cached response)
+    else Retryable (S3 failed after payment)
+        DDB-->>Upload: Retryable entry found
+        Note over Upload: LOG: idempotency_retryable_upload_resume
+        Note over Upload: Restore cached payment result<br/>(skip payment re-verification)
     end
 
     Upload->>DDB: Get quote (quotes table, ConsistentRead)
     Note over Upload: Validate quote: not expired,<br/>hashes match, price > 0
+    Note over Upload: LOG: quote_lookup_succeeded
 
     Upload->>DDB: Claim idempotency lock (in_progress)
+    Note over Upload: LOG: idempotency_lock_acquired
 
     alt No payment header
         Upload-->>APIGW: 402 payment_required<br/>+ PAYMENT-REQUIRED headers
@@ -536,20 +578,47 @@ sequenceDiagram
         APIGW->>Upload: Invoke Lambda
     end
 
-    Note over Upload: verify_and_settle_payment:<br/>decode payment, validate fields,<br/>recover EIP-712 signer,<br/>settle (mock or onchain)
+    Note over Upload: verify_and_settle_payment:<br/>decode payment, validate fields,<br/>recover EIP-712 signer,<br/>settle (onchain default, mock opt-in)
+    Note over Upload: LOG: payment_verification_succeeded
 
-    Upload->>S3: PutObject (ciphertext + wrapped-dek metadata)
-    S3-->>Upload: Success
+    alt mode == presigned
+        Upload->>S3: generate_presigned_url(put_object, 1hr TTL)
+        S3-->>Upload: presigned PUT URL
+        Note over Upload: LOG: presigned_url_generated
+    else mode == inline
+        Upload->>S3: PutObject (ciphertext + wrapped-dek metadata)
+
+        alt S3 PutObject fails
+            S3-->>Upload: Error
+            Note over Upload: LOG: s3_upload_failed_after_payment (ERROR)
+            Upload->>DDB: Mark idempotency retryable<br/>(preserve payment context)
+            Upload-->>APIGW: 207 {upload_failed: true,<br/>trans_id, error_message}<br/>+ PAYMENT-RESPONSE headers
+            APIGW-->>Proxy: 207
+            Proxy-->>Client: 207 (payment ok, S3 failed)
+            Note over Client: Client can retry with same<br/>Idempotency-Key to re-attempt S3
+        end
+
+        S3-->>Upload: Success
+        Note over Upload: LOG: s3_upload_succeeded
+    end
 
     Upload->>DDB: Write transaction log (upload-transaction-log table)
+    Note over Upload: LOG: transaction_log_written
     Upload->>DDB: Delete consumed quote (best-effort)
     Upload->>DDB: Mark idempotency completed
 
-    Upload-->>APIGW: 200 {quote_id, addr, trans_id, bucket_name, ...}<br/>+ PAYMENT-RESPONSE headers
+    Upload-->>APIGW: 200 {quote_id, addr, trans_id,<br/>bucket_name, upload_url? ...}<br/>+ PAYMENT-RESPONSE headers
     APIGW-->>Proxy: 200
     Proxy-->>Client: 200 + payment response headers
 
     Note over Client: Parse upload response
+
+    alt Presigned mode
+        Note over Client: uploadPresignedObjectIfNeeded
+        Client->>S3: PUT upload_url (encrypted content)
+        S3-->>Client: 200
+    end
+
     Note over Client: Append to object.log
     Note over Client: Create cron job in crontab.txt
     Note over Client: Optional: delete local archive
@@ -559,112 +628,63 @@ sequenceDiagram
 
 ---
 
-## 8. Recommended Code Changes
+## 8. Code Changes -- Status
 
-### 8.1 CRITICAL: Client-Backend Request Body Schema Mismatch
+All five issues identified during the original code audit have been implemented across the `mnemospark` and `mnemospark-backend` repositories.
 
-**Repos**: `mnemospark` and `mnemospark-backend`
-**Severity**: Blocker -- uploads cannot succeed with the current schema mismatch.
+| # | Issue | Severity | Status | Fix |
+|---|---|---|---|---|
+| 8.1 | Client-Backend Request Body Schema Mismatch | Blocker | **RESOLVED** | `forwardStorageUploadToBackend()` in `mnemospark/src/cloud-price-storage.ts` now builds a flat `backendRequestBody` (lines 480-506), promoting `payload.*` fields to top level and omitting the nested `payload` key. Backend API Gateway model (`template.yaml` lines 377-409) updated: `ciphertext` removed from `required`, `mode`/`content_sha256`/`content_length_bytes` added as optional properties. |
+| 8.2 | Presigned URL Path Not Implemented | Blocker (>4.5 MB) | **RESOLVED** | Backend `lambda_handler` branches on `request.mode`. For `"presigned"`: generates a 1-hour presigned S3 PUT URL (`app.py` lines 1431-1453) and returns it as `upload_url` + `upload_headers`. `parse_input()` accepts `mode` and makes `ciphertext` optional. `_request_fingerprint()` handles `ciphertext is None` using `content_sha256`. Cached idempotency responses regenerate fresh presigned URLs. |
+| 8.3 | No Explicit Logging in Backend Lambda | Medium | **RESOLVED** | `app.py` initializes `logger = logging.getLogger(__name__)` (line 30) with a `_log_event()` helper (line 186) for structured JSON logging. 20+ log points at INFO/WARNING/ERROR/DEBUG levels covering parsing, auth, idempotency, payment, S3, transaction log, and all error handlers. |
+| 8.4 | Payment Before S3 Upload -- No Rollback | High | **RESOLVED** | S3 upload is wrapped in its own `try/except` (lines 1456-1526). On S3 failure after payment: idempotency record is marked `retryable` via `_mark_idempotency_upload_retryable()` (preserving payment context), logs `s3_upload_failed_after_payment` at ERROR, and returns **207 Multi-Status** with `upload_failed: true` and `trans_id`. Retries with the same Idempotency-Key skip payment re-verification. |
+| 8.5 | Settlement Mode Defaults to `mock` | Medium | **RESOLVED** | `_settlement_mode()` (line 795) now defaults to `"onchain"`. `template.yaml` parameter `PaymentSettlementMode` default changed to `onchain`. A WARNING is logged when mock mode is explicitly activated. |
 
-The client sends a `StorageUploadRequest` with a nested `payload` object:
+---
 
-```json
-{
-  "quote_id": "...",
-  "wallet_address": "...",
-  "object_id": "...",
-  "object_id_hash": "...",
-  "quoted_storage_price": 1.25,
-  "payload": {
-    "mode": "inline",
-    "content_base64": "<base64-ciphertext>",
-    "wrapped_dek": "<base64-wrapped-key>",
-    "content_sha256": "...",
-    "content_length_bytes": 12345,
-    "encryption_algorithm": "AES-256-GCM",
-    "bucket_name_hint": "...",
-    "key_store_path_hint": "..."
-  }
-}
-```
+## 9. Remaining Blockers and Recommended Changes
 
-Defined in `src/cloud-price-storage.ts` lines 36-54. The proxy forwards this body unchanged via `JSON.stringify(request)` in `forwardStorageUploadToBackend()` at line 457.
+The following items were identified during post-implementation re-evaluation. They are assessed against the goal of **successful on-chain payment and file upload to S3**.
 
-The backend API Gateway model (`template.yaml` lines 374-401) and `parse_input()` in `services/storage-upload/app.py` expect flat top-level fields:
+### 9.1 Client Does Not Handle 207 (S3 Failure After Payment)
 
-```json
-{
-  "quote_id": "...",
-  "wallet_address": "...",
-  "object_id": "...",
-  "object_id_hash": "...",
-  "ciphertext": "<base64>",
-  "wrapped_dek": "<base64>"
-}
-```
+**Repo**: `mnemospark`
+**Severity**: High -- user sees cryptic error, retry opportunity lost
 
-Two failures result:
+The backend now returns **207 Multi-Status** when S3 fails after payment settlement. The 207 body contains `upload_failed: true`, `trans_id`, and `error_message` but is missing fields the client requires (`object_key`, `provider`, `bucket_name`, `location`).
 
-1. API Gateway rejects the request (`ValidateBody: true`) because required fields `ciphertext` and `wrapped_dek` are missing at the top level.
-2. Even without gateway validation, the Lambda's `parse_input` calls `_decode_base64_field(params, "ciphertext")` which raises `BadRequestError("ciphertext is required")` since `ciphertext` is nested inside `payload`.
+The client path (`src/cloud-price-storage.ts`):
+1. `requestStorageUploadViaProxy()` at line 368: `!response.ok` is false for 207 (207 is in the 200-299 range), so the response passes through.
+2. `parseStorageUploadResponse()` at line 291: requires `quoteId`, `addr`, `objectId`, `objectKey`, `provider`, `bucketName`, and `location` to be non-empty. The 207 body is missing most of these, so this throws `"Missing required fields in upload response"`.
+3. The user sees a generic parse error instead of being told payment succeeded but S3 failed.
+4. The idempotency record is in `retryable` state, so a retry with the same key would succeed, but the client does not attempt it.
 
-**Recommended fix (option a)** -- `mnemospark`: Have `forwardStorageUploadToBackend` flatten the `payload` sub-object to top-level fields before forwarding: map `payload.content_base64` to `ciphertext`, promote `payload.wrapped_dek` to the top level, and remove the nested `payload` key. This keeps the backend API contract stable.
+**Recommended fix** (`mnemospark`): In `requestStorageUploadViaProxy()`, check `response.status === 207` or parse the body for `upload_failed: true` before calling `parseStorageUploadResponse()`. When detected:
+- Extract `trans_id` from the 207 body.
+- Automatically retry the upload with the same `Idempotency-Key` (which will resume from the retryable idempotency state, skipping payment).
+- If retry also fails, return a clear user-facing message: `"Payment confirmed (trans_id: 0x...) but file storage failed. Retrying... If the issue persists, contact support with your trans_id."`.
+- Do NOT call `parseStorageUploadResponse()` on the 207 body.
 
-**Recommended fix (option b)** -- `mnemospark-backend`: Update `parse_input` to also look inside a `payload` sub-object for `content_base64`/`ciphertext` and `wrapped_dek`, and update the API Gateway model to not require `ciphertext` and `wrapped_dek` at the top level. More complex but more tolerant of different client shapes.
-
-### 8.2 Presigned URL Path Not Implemented on Backend
+### 9.2 Presigned Upload Has No Backend Confirmation Step
 
 **Repo**: `mnemospark-backend`
-**Severity**: Blocker for files > 4.5 MB (encrypted)
+**Severity**: Medium -- payment confirmed but S3 upload unverified for presigned mode
 
-The client switches to `mode: "presigned"` for encrypted content exceeding 4,500,000 bytes (`INLINE_UPLOAD_MAX_BYTES` at `src/cloud-command.ts` line 49). In this mode, `content_base64` is omitted from the payload and the client expects the backend response to include an `upload_url` (S3 presigned PUT URL).
-
-The backend never generates or returns an `upload_url`. It always expects `ciphertext` in the request body and writes directly via `s3:PutObject`. Large-file uploads therefore fail with "Cannot upload storage object: missing presigned upload URL" thrown from `uploadPresignedObjectIfNeeded` at `src/cloud-command.ts` line 1024.
-
-**Recommended fix** (`mnemospark-backend`): Add a presigned-URL code path in `lambda_handler`: when `mode == "presigned"` and no `ciphertext` is present, generate a presigned S3 PUT URL via `s3_client.generate_presigned_url('put_object', ...)`, return it as `upload_url` in the 200 response, and defer writing the transaction log until a separate confirmation step or use S3 event notifications to confirm the upload completed.
-
-### 8.3 No Explicit Logging in Backend Upload Lambda
-
-**Repo**: `mnemospark-backend`
-**Severity**: Medium -- does not block uploads but makes debugging very difficult.
-
-`services/storage-upload/app.py` (1231 lines) contains zero `print()`, `logging.info()`, or `logger.xxx()` calls. All observability comes from Lambda runtime auto-logging (only unhandled exceptions and invocation metadata) and API Gateway access logs (request metadata only, no business context).
-
-**Recommended fix** (`mnemospark-backend`): Add structured logging via `logging.getLogger(__name__)` at key decision points:
-
-- Input parsing success (quote_id, wallet_address, object_id).
-- Quote lookup result (found/not found/expired).
-- Payment verification outcome (valid/invalid, settlement mode, trans_id).
-- S3 upload success (bucket, key, size).
-- Idempotency events (cache hit, lock acquired, lock released, completed).
-- Error conditions with request context for correlation.
-
-### 8.4 Payment Settled Before S3 Upload -- No Rollback on S3 Failure
-
-**Repo**: `mnemospark-backend`
-**Severity**: High -- risk of charging the user without storing their file.
-
-In `lambda_handler` (`app.py` lines 1135-1152), payment is settled first (line 1135), then S3 upload happens (line 1146). If S3 upload fails after payment succeeds:
-
-- The generic `except Exception` handler (line 1227) releases the idempotency lock.
-- But on-chain payment is already settled -- the `transferWithAuthorization` nonce is consumed on the USDC contract.
-- A retry with the same payment signature will fail because the nonce was already used.
-- The user has been charged but their file was not stored.
-
-**Recommended fix** (`mnemospark-backend`): Wrap the S3 upload in its own try/except block. On S3 failure after successful payment settlement:
-
-- Return a partial-success response (e.g., status 207) that includes the `trans_id` and payment proof but signals the file was not stored, so the client can retry the S3 upload without re-paying.
-- Alternatively, do NOT release the idempotency lock on S3 failure. Keep the lock in `in_progress` state so that a retry with the same idempotency key can re-attempt the S3 upload using the already-settled payment result.
-
-### 8.5 Payment Settlement Mode Defaults to `mock`
-
-**Repo**: `mnemospark-backend`
-**Severity**: Medium -- configuration risk for production deployments.
-
-`MNEMOSPARK_PAYMENT_SETTLEMENT_MODE` defaults to `mock` (`app.py` line 870). In mock mode, no actual USDC transfer occurs -- only a deterministic hash is generated as the `trans_id`. If deployed without explicitly setting the parameter to `onchain`, uploads appear to succeed but no payment is collected.
+For presigned uploads, the backend settles payment and returns a presigned PUT URL. The client then uploads directly to S3. But the backend has no mechanism to verify the client actually completed the S3 PUT. Consequences:
+- The transaction log is written before the S3 PUT completes -- it records success even if the client never uploads.
+- There is no S3 event notification or confirmation callback.
+- The consumed quote is deleted, so retrying requires a new quote.
 
 **Recommended fix** (`mnemospark-backend`): Consider one of:
+- **(a)** Defer the transaction log write for presigned uploads: have the client call a `/storage/upload/confirm` endpoint after the presigned PUT succeeds. The confirm endpoint verifies the S3 object exists, then writes the transaction log.
+- **(b)** Use an S3 event notification (e.g., `s3:ObjectCreated:Put`) to trigger a Lambda that verifies the upload matches a pending transaction and finalizes the log.
+- **(c)** Add a housekeeping job that periodically checks presigned transactions against actual S3 objects and flags or rolls back unconfirmed uploads.
 
-- Fail explicitly when `MNEMOSPARK_PAYMENT_SETTLEMENT_MODE` is not set (remove the `mock` default), so production deployments are forced to configure the mode.
-- Add a startup validation in the Lambda (cold start) that logs a warning when running in mock mode.
-- Add a `Condition` in `template.yaml` that requires `PaymentSettlementMode` to be explicitly provided for production stages.
+### 9.3 Client x402 Retry Sends Full Body to Proxy Again -- Unnecessary for Presigned Mode
+
+**Repo**: `mnemospark`
+**Severity**: Low -- inefficiency, not a blocker
+
+When the x402 wrapper handles a 402 response and retries with the signed payment, it re-sends the full request body. For inline mode this is fine (ciphertext is in the body). For presigned mode the body is small (no ciphertext), so the impact is negligible. However, if future changes cause the retry to re-encrypt or re-compute, this could become a performance issue.
+
+No fix required at this time. Note for future consideration.
