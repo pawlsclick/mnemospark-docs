@@ -59,26 +59,26 @@ Concretely:
 ## References
 
 - High-level process for `/mnemospark-cloud price-storage`:
-  - [mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md](../../../mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md)
+  - [cloud-price-storage-process-flow.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/cloud-price-storage-process-flow.md)
 - Backend API base URL and how the client/proxy talks to this backend:
-  - [mnemospark-docs/meta_docs/backend-api-base-url.md](../../../mnemospark-docs/meta_docs/backend-api-base-url.md)
+  - [backend-api-base-url.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/backend-api-base-url.md)
 - Wallet proof behavior (context for optional authorizer on `/price-storage`):
-  - [mnemospark-docs/meta_docs/wallet-proof.md](../../../mnemospark-docs/meta_docs/wallet-proof.md)
+  - [wallet-proof.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/wallet-proof.md)
 - Full CloudFormation/SAM definition of the backend, including `PriceStorageFunction` and quotes table:
-  - [mnemospark-backend/template.yaml](../../../mnemospark-backend/template.yaml)
+  - [template.yaml](https://github.com/pawlsclick/mnemospark-backend/blob/main/template.yaml)
 - Current `/price-storage` Lambda implementation (to be refactored):
-  - [mnemospark-backend/services/price-storage/app.py](../../../mnemospark-backend/services/price-storage/app.py)
-  - [mnemospark-backend/services/price_storage_entry.py](../../../mnemospark-backend/services/price_storage_entry.py)
+  - [`services/price-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price-storage/app.py)
+  - [`services/price_storage_entry.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price_storage_entry.py)
 - Existing BCM-based helpers (for understanding the current behavior; these will no longer be used by `/price-storage` after this fix):
-  - [mnemospark-backend/services/estimate-storage/app.py](../../../mnemospark-backend/services/estimate-storage/app.py)
-  - [mnemospark-backend/services/estimate-transfer/app.py](../../../mnemospark-backend/services/estimate-transfer/app.py)
+  - [`services/estimate-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-storage/app.py)
+  - [`services/estimate-transfer/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-transfer/app.py)
 - Tests that exercise pricing behavior:
-  - [mnemospark-backend/tests/unit/test_price_storage.py](../../../mnemospark-backend/tests/unit/test_price_storage.py)
-  - [mnemospark-backend/tests/integration/test_price_storage_integration.py](../../../mnemospark-backend/tests/integration/test_price_storage_integration.py)
+  - [`tests/unit/test_price_storage.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/unit/test_price_storage.py)
+  - [`tests/integration/test_price_storage_integration.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/integration/test_price_storage_integration.py)
 - Client/proxy side that must remain compatible (for context only; do not modify these repos in this run):
-  - [mnemospark/src/cloud-command.ts](../../../mnemospark/src/cloud-command.ts)
-  - [mnemospark/src/cloud-price-storage.ts](../../../mnemospark/src/cloud-price-storage.ts)
-  - [mnemospark/src/proxy.ts](../../../mnemospark/src/proxy.ts)
+  - [`src/cloud-command.ts`](https://github.com/pawlsclick/mnemospark/blob/main/src/cloud-command.ts)
+  - [`src/cloud-price-storage.ts`](https://github.com/pawlsclick/mnemospark/blob/main/src/cloud-price-storage.ts)
+  - [`src/proxy.ts`](https://github.com/pawlsclick/mnemospark/blob/main/src/proxy.ts)
 - AWS documentation for Price List Query API and Pricing:
   - [Finding services and products using AWS Price List Query API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-price-list-query-api.html)
   - AWS Pricing API reference via AWS MCP `aws___read_documentation` / `aws___call_aws` tools as needed.

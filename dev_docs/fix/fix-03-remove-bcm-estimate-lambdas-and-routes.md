@@ -60,24 +60,24 @@ Concretely:
 ## References
 
 - High-level description of the price-storage flow and how estimate services were previously used:
-  - [mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md](../../../mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md)
+  - [cloud-price-storage-process-flow.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/cloud-price-storage-process-flow.md)
 - Backend SAM template defining Lambdas and API routes (including estimate and price-storage functions):
-  - [mnemospark-backend/template.yaml](../../../mnemospark-backend/template.yaml)
+  - [template.yaml](https://github.com/pawlsclick/mnemospark-backend/blob/main/template.yaml)
 - Price-storage implementation (should already be using Price List Query API after `fix-01`):
-  - [mnemospark-backend/services/price-storage/app.py](../../../mnemospark-backend/services/price-storage/app.py)
-  - [mnemospark-backend/services/price_storage_entry.py](../../../mnemospark-backend/services/price_storage_entry.py)
+  - [`services/price-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price-storage/app.py)
+  - [`services/price_storage_entry.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price_storage_entry.py)
 - BCM-based estimate modules to be decommissioned:
-  - [mnemospark-backend/services/estimate-storage/app.py](../../../mnemospark-backend/services/estimate-storage/app.py)
-  - [mnemospark-backend/services/estimate-transfer/app.py](../../../mnemospark-backend/services/estimate-transfer/app.py)
-  - [mnemospark-backend/services/estimate_transfer_entry.py](../../../mnemospark-backend/services/estimate_transfer_entry.py)
+  - [`services/estimate-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-storage/app.py)
+  - [`services/estimate-transfer/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-transfer/app.py)
+  - [`services/estimate_transfer_entry.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate_transfer_entry.py)
 - Tests that currently exercise estimate endpoints (to be cleaned up or removed):
-  - [mnemospark-backend/tests/unit/test_estimate_storage.py](../../../mnemospark-backend/tests/unit/test_estimate_storage.py)
-  - [mnemospark-backend/tests/unit/test_estimate_transfer.py](../../../mnemospark-backend/tests/unit/test_estimate_transfer.py)
-  - [mnemospark-backend/tests/integration/test_estimate_storage_integration.py](../../../mnemospark-backend/tests/integration/test_estimate_storage_integration.py)
-  - [mnemospark-backend/tests/integration/test_estimate_transfer_integration.py](../../../mnemospark-backend/tests/integration/test_estimate_transfer_integration.py)
+  - [`tests/unit/test_estimate_storage.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/unit/test_estimate_storage.py)
+  - [`tests/unit/test_estimate_transfer.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/unit/test_estimate_transfer.py)
+  - [`tests/integration/test_estimate_storage_integration.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/integration/test_estimate_storage_integration.py)
+  - [`tests/integration/test_estimate_transfer_integration.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/integration/test_estimate_transfer_integration.py)
 - Price-storage tests that should remain and provide pricing coverage:
-  - [mnemospark-backend/tests/unit/test_price_storage.py](../../../mnemospark-backend/tests/unit/test_price_storage.py)
-  - [mnemospark-backend/tests/integration/test_price_storage_integration.py](../../../mnemospark-backend/tests/integration/test_price_storage_integration.py)
+  - [`tests/unit/test_price_storage.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/unit/test_price_storage.py)
+  - [`tests/integration/test_price_storage_integration.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/tests/integration/test_price_storage_integration.py)
 
 ## Agent
 

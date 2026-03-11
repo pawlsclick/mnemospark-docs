@@ -44,19 +44,19 @@ Concretely in `template.yaml`:
 ## References
 
 - High-level documentation for the `/price-storage` flow:
-  - [mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md](../../../mnemospark-docs/meta_docs/cloud-price-storage-process-flow.md)
+  - [cloud-price-storage-process-flow.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/cloud-price-storage-process-flow.md)
 - Backend API template and function definitions:
-  - [mnemospark-backend/template.yaml](../../../mnemospark-backend/template.yaml)
+  - [template.yaml](https://github.com/pawlsclick/mnemospark-backend/blob/main/template.yaml)
 - `/price-storage` Lambda implementation (after `fix-01` has been applied):
-  - [mnemospark-backend/services/price-storage/app.py](../../../mnemospark-backend/services/price-storage/app.py)
-  - [mnemospark-backend/services/price_storage_entry.py](../../../mnemospark-backend/services/price_storage_entry.py)
+  - [`services/price-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price-storage/app.py)
+  - [`services/price_storage_entry.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/price_storage_entry.py)
 - Quotes table and related resources:
-  - `QuotesTable` definition and references in [mnemospark-backend/template.yaml](../../../mnemospark-backend/template.yaml)
+  - `QuotesTable` definition and references in [template.yaml](https://github.com/pawlsclick/mnemospark-backend/blob/main/template.yaml)
 - Existing IAM role for price-storage (to be updated by this fix):
-  - `PriceStorageLambdaRole` in [mnemospark-backend/template.yaml](../../../mnemospark-backend/template.yaml)
+  - `PriceStorageLambdaRole` in [template.yaml](https://github.com/pawlsclick/mnemospark-backend/blob/main/template.yaml)
 - Context about the existing BCM-based estimate functions (for understanding what is being phased out, not modified in this fix):
-  - [mnemospark-backend/services/estimate-storage/app.py](../../../mnemospark-backend/services/estimate-storage/app.py)
-  - [mnemospark-backend/services/estimate-transfer/app.py](../../../mnemospark-backend/services/estimate-transfer/app.py)
+  - [`services/estimate-storage/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-storage/app.py)
+  - [`services/estimate-transfer/app.py`](https://github.com/pawlsclick/mnemospark-backend/blob/main/services/estimate-transfer/app.py)
 - AWS documentation for Pricing / Price List Query and IAM:
   - [Finding services and products using AWS Price List Query API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-price-list-query-api.html)
   - AWS IAM documentation for the `pricing` service (accessible via AWS MCP `aws___read_documentation` / `aws___call_aws` tools).
