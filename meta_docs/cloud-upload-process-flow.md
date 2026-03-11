@@ -142,7 +142,7 @@ Calculates `requiredMicros` from `quoted_storage_price * 1,000,000`. Queries the
   "error": "insufficient_balance",
   "message": "Insufficient USDC balance. Current: $X.XX, Required: $Y.YY",
   "wallet": "0x...",
-  "help": "Fund wallet 0x... on Base before running /mnemospark cloud upload"
+  "help": "Fund wallet 0x... on Base before running /mnemospark-cloud upload"
 }
 ```
 
@@ -268,7 +268,9 @@ The handler branches on `mode`:
 2. Validates bucket name and ensures bucket exists.
 3. Generates a presigned S3 PUT URL via `s3_client.generate_presigned_url('put_object', ...)` with a 1-hour TTL.
 4. Logs `presigned_url_generated` at INFO level.
-5. Does NOT write ciphertext to S3 -- the client will PUT directly using the presigned URL after receiving the response.
+5. Does NOT write ciphertext to S3 — the client will PUT directly using the presigned URL after receiving the response.
+6. Does NOT write the transaction log or delete the consumed quote at this stage. Marks the idempotency record as `pending_confirmation` (not `completed`).
+7. Returns 200 with `upload_url`, `upload_headers`, and **`confirmation_required: true`**. The client must call `POST /storage/upload/confirm` after successfully uploading to S3 to finalize the transaction.
 
 **Inline mode** (`mode == "inline"`, default):
 1. Requires `ciphertext` (raises `BadRequestError` if `None`).
@@ -279,17 +281,23 @@ The handler branches on `mode`:
    - Returns **207 Multi-Status** with `"upload_failed": true`, the `trans_id`, and payment response headers -- signaling that payment succeeded but storage did not.
 4. On success, logs `s3_upload_succeeded` at INFO level.
 
-#### Step 10 -- Transaction Log
+#### Step 10 -- Transaction Log (inline only; presigned: deferred to confirm)
 
-`_write_transaction_log()` writes to the `upload-transaction-log` DynamoDB table with: `quote_id`, `trans_id`, timestamp, payment details (network, asset, amount, status=confirmed, recipient), wallet info, object metadata, provider, bucket, location. Logs `transaction_log_written` at INFO level.
+**Inline mode:** `_write_transaction_log()` writes to the `upload-transaction-log` DynamoDB table with: `quote_id`, `trans_id`, timestamp, payment details (network, asset, amount, status=confirmed, recipient), wallet info, object metadata, provider, bucket, location. Logs `transaction_log_written` at INFO level.
 
-#### Step 11 -- Quote Deletion
+**Presigned mode:** Transaction log is not written here. It is written by the confirm handler when the client calls `POST /storage/upload/confirm` after the S3 PUT succeeds.
 
-Best-effort `delete_item` on the quotes table for the consumed `quote_id`. Failures are silently caught. Logs `consumed_quote_deleted` at DEBUG level.
+#### Step 11 -- Quote Deletion (inline only; presigned: deferred to confirm)
+
+**Inline mode:** Best-effort `delete_item` on the quotes table for the consumed `quote_id`. Failures are silently caught. Logs `consumed_quote_deleted` at DEBUG level.
+
+**Presigned mode:** Quote is not deleted here. It is deleted by the confirm handler after the transaction log is written.
 
 #### Step 12 -- Idempotency Completion and Response
 
-If an idempotency lock was acquired, marks it `completed` with the response body and payment response header cached.
+**Inline mode:** If an idempotency lock was acquired, marks it `completed` with the response body and payment response header cached.
+
+**Presigned mode:** Marks idempotency `pending_confirmation` (not `completed`). The confirm handler will mark it `completed` after verifying the S3 object exists.
 
 Returns 200 with:
 
@@ -312,26 +320,56 @@ For presigned mode, the response additionally includes:
 ```json
 {
   "upload_url": "https://mnemospark-a3f1b2c4.s3.amazonaws.com/backup.tar.gz?X-Amz-...",
-  "upload_headers": { "Content-Type": "application/octet-stream" }
+  "upload_headers": { "Content-Type": "application/octet-stream", "x-amz-meta-wrapped-dek": "..." },
+  "confirmation_required": true
 }
 ```
 
 Response headers include `PAYMENT-RESPONSE` and `x-payment-response` (base64 JSON with `trans_id`, `network`, `asset`, `amount`).
 
+#### Step 13 -- Confirm Upload (presigned only; client-triggered)
+
+After the client successfully PUTs the encrypted content to the presigned URL, the client calls **`POST /storage/upload/confirm`** (handled by `StorageUploadConfirmFunction` in the same `app.py`). The confirm handler:
+
+1. Parses the JSON body: `wallet_address`, `object_key`, `idempotency_key`, `quote_id`.
+2. Verifies the request wallet matches the authorizer context (`X-Wallet-Signature`).
+3. Looks up the idempotency record. If status is already `completed`, returns the cached 200 response. If status is `pending_confirmation`, continues.
+4. Verifies the S3 object exists via `head_object` on the wallet-scoped bucket and `object_key`. If the object is missing, returns **404** with a message that the client must upload via the presigned URL first.
+5. Writes the transaction log (`_write_transaction_log()`).
+6. Deletes the consumed quote (best-effort).
+7. Marks the idempotency record `completed`.
+8. Returns 200 with the same response shape as a completed upload (without `upload_url`, `upload_headers`, or `confirmation_required`).
+
+If the client never calls confirm, the idempotency record expires after 24 hours and the quote remains in the quotes table (until its own TTL).
+
 ---
 
 ### 2.4 Return Path Summary
 
+**Inline upload:**
 ```
 Backend 200 + payment-response headers
   -> Proxy relays status, body, and payment headers to client
     -> Client x402 wrapper resolves the final response
-      -> requestStorageUploadViaProxy parses the JSON response
-        -> uploadPresignedObjectIfNeeded (PUT to S3 if presigned URL returned)
-          -> appendStorageUploadLog (write to object.log)
-            -> createStoragePaymentCronJob (write to crontab.txt)
-              -> maybeCleanupLocalBackupArchive (optional)
-                -> Return success message to user
+      -> requestStorageUploadViaProxy parses the JSON response (or retries on 207, then parses 200)
+        -> appendStorageUploadLog (write to object.log)
+          -> createStoragePaymentCronJob (write to crontab.txt)
+            -> maybeCleanupLocalBackupArchive (optional)
+              -> Return success message to user
+```
+
+**Presigned upload:**
+```
+Backend 200 + upload_url + confirmation_required: true
+  -> Proxy relays to client
+    -> requestStorageUploadViaProxy parses the JSON response
+      -> uploadPresignedObjectIfNeeded (PUT to S3 using presigned URL)
+        -> Client calls POST /storage/upload/confirm (via proxy) with wallet_address, object_key, idempotency_key, quote_id
+          -> Backend confirm handler verifies S3 object exists, writes transaction log, marks idempotency completed
+        -> appendStorageUploadLog (write to object.log)
+          -> createStoragePaymentCronJob (write to crontab.txt)
+            -> maybeCleanupLocalBackupArchive (optional)
+              -> Return success message to user
 ```
 
 ---
@@ -362,10 +400,10 @@ Backend 200 + payment-response headers
 
 | File | Role |
 |---|---|
-| `services/storage-upload/app.py` | Main upload Lambda handler (~1690 lines): input parsing, wallet authorization, idempotency (with retryable state), quote validation, payment verification/settlement (onchain default), S3 upload (inline + presigned), S3 failure rollback (207), transaction log, structured JSON logging |
+| `services/storage-upload/app.py` | Main upload Lambda handler: input parsing, wallet authorization, idempotency (retryable + `pending_confirmation`), quote validation, payment verification/settlement (onchain default), S3 upload (inline + presigned), S3 failure rollback (207), presigned two-phase flow (defers transaction log until confirm). Also `confirm_upload_handler()` for `POST /storage/upload/confirm`: verifies S3 object via `head_object`, writes transaction log, marks idempotency completed. Structured JSON logging throughout. |
 | `services/storage-upload/requirements.txt` | Dependencies: `boto3`, `eth-account`, `web3` |
 | `services/wallet-authorizer/app.py` | Lambda authorizer: EIP-712 wallet proof verification, signature age checking |
-| `template.yaml` | SAM template: route definitions, IAM roles, DynamoDB tables (`QuotesTable`, `UploadTransactionLogTable`, `UploadIdempotencyTable`), environment variables, API Gateway models, CloudWatch alarms |
+| `template.yaml` | SAM template: route definitions (`/storage/upload`, `/storage/upload/confirm`), IAM roles, DynamoDB tables (`QuotesTable`, `UploadTransactionLogTable`, `UploadIdempotencyTable`), environment variables, API Gateway models (`StorageUploadRequest`, `UploadConfirmRequest`), `StorageUploadFunction` and `StorageUploadConfirmFunction`, CloudWatch alarms |
 
 ### Local Filesystem (user machine)
 
@@ -452,9 +490,9 @@ Thank you for using mnemospark!
 | Condition | Error Message | `isError` |
 |---|---|---|
 | Missing required flags | `"Cannot upload storage object: required arguments are --quote-id, --wallet-address, --object-id, --object-id-hash."` | true |
-| Quote not found in object.log | `"Cannot upload storage object: quote-id not found in object.log. Run /mnemospark cloud price-storage first."` | true |
+| Quote not found in object.log | `"Cannot upload storage object: quote-id not found in object.log. Run /mnemospark-cloud price-storage first."` | true |
 | Quote details mismatch | `"Cannot upload storage object: quote details do not match wallet/object arguments."` | true |
-| Archive not found locally | `"Cannot upload storage object: local archive not found at <path>. Run /mnemospark cloud backup first."` | true |
+| Archive not found locally | `"Cannot upload storage object: local archive not found at <path>. Run /mnemospark-cloud backup first."` | true |
 | Archive is not a file | `"Cannot upload storage object: local archive path is not a file (<path>)."` | true |
 | Archive hash mismatch | `"Cannot upload storage object: object-id-hash does not match local archive."` | true |
 | Wallet address mismatch | `"Cannot upload storage object: wallet key address <derived> does not match --wallet-address <given>."` | true |
@@ -473,8 +511,9 @@ Thank you for using mnemospark!
 
 | Status | Error Key | Condition |
 |---|---|---|
-| 207 | `upload_failed` | S3 upload failed after payment was settled. Payment is confirmed (`trans_id` included in response) but file was not stored. Idempotency record is marked `retryable` -- client can retry with the same Idempotency-Key to re-attempt S3 upload without re-paying. |
+| 207 | `upload_failed` | S3 upload failed after payment was settled. Payment is confirmed (`trans_id` included in response) but file was not stored. Idempotency record is marked `retryable` — client can retry with the same Idempotency-Key to re-attempt S3 upload without re-paying. |
 | 400 | `Bad request` | Missing/invalid fields, hash mismatch, validation failure |
+| 404 | `S3 object not found` | (Confirm endpoint only) The object does not exist in S3 at the expected bucket/key. Client must complete the presigned PUT before calling confirm. |
 | 402 | `payment_required` | No payment header, invalid payment, amount too low, expired authorization, signer mismatch |
 | 403 | `forbidden` | Missing or mismatched wallet authorizer context |
 | 404 | `quote_not_found` | Quote missing or expired |
@@ -507,6 +546,7 @@ sequenceDiagram
     participant APIGW as API Gateway
     participant Auth as WalletAuthorizer<br/>(Lambda)
     participant Upload as StorageUpload<br/>(Lambda)
+    participant Confirm as StorageUploadConfirm<br/>(Lambda)
     participant DDB as DynamoDB
     participant S3 as S3
 
@@ -585,6 +625,7 @@ sequenceDiagram
         Upload->>S3: generate_presigned_url(put_object, 1hr TTL)
         S3-->>Upload: presigned PUT URL
         Note over Upload: LOG: presigned_url_generated
+        Note over Upload: Mark idempotency<br/>pending_confirmation<br/>(no transaction log yet)
     else mode == inline
         Upload->>S3: PutObject (ciphertext + wrapped-dek metadata)
 
@@ -602,12 +643,14 @@ sequenceDiagram
         Note over Upload: LOG: s3_upload_succeeded
     end
 
-    Upload->>DDB: Write transaction log (upload-transaction-log table)
-    Note over Upload: LOG: transaction_log_written
-    Upload->>DDB: Delete consumed quote (best-effort)
-    Upload->>DDB: Mark idempotency completed
+    alt mode == inline
+        Upload->>DDB: Write transaction log (upload-transaction-log table)
+        Note over Upload: LOG: transaction_log_written
+        Upload->>DDB: Delete consumed quote (best-effort)
+        Upload->>DDB: Mark idempotency completed
+    end
 
-    Upload-->>APIGW: 200 {quote_id, addr, trans_id,<br/>bucket_name, upload_url? ...}<br/>+ PAYMENT-RESPONSE headers
+    Upload-->>APIGW: 200 {quote_id, addr, trans_id,<br/>bucket_name, upload_url?,<br/>confirmation_required? ...}<br/>+ PAYMENT-RESPONSE headers
     APIGW-->>Proxy: 200
     Proxy-->>Client: 200 + payment response headers
 
@@ -617,6 +660,21 @@ sequenceDiagram
         Note over Client: uploadPresignedObjectIfNeeded
         Client->>S3: PUT upload_url (encrypted content)
         S3-->>Client: 200
+        Note over Client: confirmation_required: true
+        Client->>Proxy: POST /mnemospark/upload/confirm<br/>{wallet_address, object_key, idempotency_key, quote_id}
+        Proxy->>APIGW: POST /storage/upload/confirm<br/>+ X-Wallet-Signature
+        APIGW->>Auth: Authorize
+        Auth-->>APIGW: Allow
+        APIGW->>Confirm: Invoke Lambda
+        Confirm->>DDB: Get idempotency (pending_confirmation)
+        Confirm->>S3: head_object (verify object exists)
+        S3-->>Confirm: 200
+        Confirm->>DDB: Write transaction log
+        Confirm->>DDB: Delete consumed quote
+        Confirm->>DDB: Mark idempotency completed
+        Confirm-->>APIGW: 200 (final response)
+        APIGW-->>Proxy: 200
+        Proxy-->>Client: 200
     end
 
     Note over Client: Append to object.log
@@ -642,49 +700,28 @@ All five issues identified during the original code audit have been implemented 
 
 ---
 
-## 9. Remaining Blockers and Recommended Changes
+## 9. Post–Phase 3 Items — Status
 
-The following items were identified during post-implementation re-evaluation. They are assessed against the goal of **successful on-chain payment and file upload to S3**.
+The following items were identified after the original five fixes (8.1–8.5). They are assessed against the goal of **successful on-chain payment and file upload to S3**.
 
-### 9.1 Client Does Not Handle 207 (S3 Failure After Payment)
+| # | Issue | Severity | Status | Notes |
+|---|---|---|---|---|
+| 9.1 | Client Does Not Handle 207 (S3 Failure After Payment) | High | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Returns 207 with `upload_failed: true` and `trans_id`; idempotency marked `retryable` so retries skip payment. **Client (mnemospark):** fix-06 adds auto-retry in `requestStorageUploadViaProxy()` and clear error with `trans_id` when retries are exhausted. |
+| 9.2 | Presigned Upload Has No Backend Confirmation Step | Medium | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Two-phase presigned flow implemented. Presigned uploads mark idempotency `pending_confirmation`, return `confirmation_required: true`, and defer transaction log and quote deletion. `POST /storage/upload/confirm` (StorageUploadConfirmFunction) verifies S3 object via `head_object`, then writes transaction log, deletes quote, and marks idempotency `completed`. **Client (mnemospark):** fix-08 adds `confirmPresignedUploadViaProxy()` and proxy route for `/mnemospark/upload/confirm`; upload handler calls confirm after presigned S3 PUT when `confirmation_required` is true. |
+| 9.3 | Client x402 Retry Sends Full Body to Proxy Again | Low | **NOT IMPLEMENTED** | When the x402 wrapper retries after 402, it re-sends the full request body. For presigned mode the body is small; impact is negligible. No fix required at this time. Note for future consideration. |
 
-**Repo**: `mnemospark`
-**Severity**: High -- user sees cryptic error, retry opportunity lost
+---
 
-The backend now returns **207 Multi-Status** when S3 fails after payment settlement. The 207 body contains `upload_failed: true`, `trans_id`, and `error_message` but is missing fields the client requires (`object_key`, `provider`, `bucket_name`, `location`).
+## 10. Remaining Blockers to Successful Payment and S3 Upload
 
-The client path (`src/cloud-price-storage.ts`):
-1. `requestStorageUploadViaProxy()` at line 368: `!response.ok` is false for 207 (207 is in the 200-299 range), so the response passes through.
-2. `parseStorageUploadResponse()` at line 291: requires `quoteId`, `addr`, `objectId`, `objectKey`, `provider`, `bucketName`, and `location` to be non-empty. The 207 body is missing most of these, so this throws `"Missing required fields in upload response"`.
-3. The user sees a generic parse error instead of being told payment succeeded but S3 failed.
-4. The idempotency record is in `retryable` state, so a retry with the same key would succeed, but the client does not attempt it.
+With 9.1 and 9.2 implemented **in mnemospark-backend**, the backend supports:
 
-**Recommended fix** (`mnemospark`): In `requestStorageUploadViaProxy()`, check `response.status === 207` or parse the body for `upload_failed: true` before calling `parseStorageUploadResponse()`. When detected:
-- Extract `trans_id` from the 207 body.
-- Automatically retry the upload with the same `Idempotency-Key` (which will resume from the retryable idempotency state, skipping payment).
-- If retry also fails, return a clear user-facing message: `"Payment confirmed (trans_id: 0x...) but file storage failed. Retrying... If the issue persists, contact support with your trans_id."`.
-- Do NOT call `parseStorageUploadResponse()` on the 207 body.
+- **Inline:** 207 on S3 failure after payment, retryable idempotency, and full success path.
+- **Presigned:** Two-phase flow with `confirmation_required` and `POST /storage/upload/confirm`.
 
-### 9.2 Presigned Upload Has No Backend Confirmation Step
+For **end-to-end success** (payment + file in S3):
 
-**Repo**: `mnemospark-backend`
-**Severity**: Medium -- payment confirmed but S3 upload unverified for presigned mode
+- **Inline:** The client (mnemospark) must handle 207 with auto-retry (fix-06). If the client has not been updated, a 207 response still causes `parseStorageUploadResponse()` to throw and the user sees a generic error; the backend is ready for retries.
+- **Presigned:** The client (mnemospark) must call the confirm endpoint after the presigned S3 PUT (fix-08). If the client has not been updated, the transaction log is never written and the upload is not finalized until/unless the client is updated to call confirm.
 
-For presigned uploads, the backend settles payment and returns a presigned PUT URL. The client then uploads directly to S3. But the backend has no mechanism to verify the client actually completed the S3 PUT. Consequences:
-- The transaction log is written before the S3 PUT completes -- it records success even if the client never uploads.
-- There is no S3 event notification or confirmation callback.
-- The consumed quote is deleted, so retrying requires a new quote.
-
-**Recommended fix** (`mnemospark-backend`): Consider one of:
-- **(a)** Defer the transaction log write for presigned uploads: have the client call a `/storage/upload/confirm` endpoint after the presigned PUT succeeds. The confirm endpoint verifies the S3 object exists, then writes the transaction log.
-- **(b)** Use an S3 event notification (e.g., `s3:ObjectCreated:Put`) to trigger a Lambda that verifies the upload matches a pending transaction and finalizes the log.
-- **(c)** Add a housekeeping job that periodically checks presigned transactions against actual S3 objects and flags or rolls back unconfirmed uploads.
-
-### 9.3 Client x402 Retry Sends Full Body to Proxy Again -- Unnecessary for Presigned Mode
-
-**Repo**: `mnemospark`
-**Severity**: Low -- inefficiency, not a blocker
-
-When the x402 wrapper handles a 402 response and retries with the signed payment, it re-sends the full request body. For inline mode this is fine (ciphertext is in the body). For presigned mode the body is small (no ciphertext), so the impact is negligible. However, if future changes cause the retry to re-encrypt or re-compute, this could become a performance issue.
-
-No fix required at this time. Note for future consideration.
+**No additional backend fixes are required** for the stated goal. Any remaining gaps are client-side (fix-06 and fix-08 in mnemospark) if those have not yet been implemented.

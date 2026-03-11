@@ -18,7 +18,7 @@ All scripts are intended to run in CI-like environments as well as on local deve
 - **test-mnemospark-openclaw-wallet.sh**: Verifies that the `mnemospark wallet` command uses `MNEMOSPARK_WALLET_KEY` (or its own wallet file) and does **not** modify `BLOCKRUN_WALLET_KEY` or the BlockRun wallet file, validating wallet environment and file separation.
 - **test-mnemospark-shared-wallet.sh**: Verifies that mnemospark can read or reuse a legacy BlockRun wallet (under a test `HOME`) without modifying it, and that any mnemospark-specific files live under `~/.openclaw/mnemospark` instead of `~/.openclaw/blockrun`.
 - **test-mnemospark-proxy-openclaw-coexistence.sh**: Verifies that the OpenClaw/ClawRouter gateway (port `8402`) and mnemospark proxy (default port `7120`, via `MNEMOSPARK_PROXY_PORT`) can run simultaneously without port conflicts.
-- **test-mnemospark-cloud-with-clawrouter.sh**: Runs a small subset of `/mnemospark cloud` commands with the OpenClaw/ClawRouter gateway running, ensuring that mnemospark continues to use its own directories (`~/.openclaw/mnemospark/...`) and does not interfere with BlockRun wallet state.
+- **test-mnemospark-cloud-with-clawrouter.sh**: Runs a small subset of `/mnemospark-cloud` commands with the OpenClaw/ClawRouter gateway running, ensuring that mnemospark continues to use its own directories (`~/.openclaw/mnemospark/...`) and does not interfere with BlockRun wallet state.
 
 ### Recommended order of operations
 
@@ -41,7 +41,7 @@ When setting up a fresh environment (local or CI) to test mnemospark with OpenCl
 8. `./test-mnemospark-proxy-openclaw-coexistence.sh`  
    Starts the OpenClaw/ClawRouter gateway and the mnemospark proxy and verifies they listen on different ports without conflict.
 9. `./test-mnemospark-cloud-with-clawrouter.sh`  
-   Runs a small set of `/mnemospark cloud` commands with ClawRouter present to ensure command coexistence and path isolation.
+   Runs a small set of `/mnemospark-cloud` commands with ClawRouter present to ensure command coexistence and path isolation.
 
 ### Notes
 

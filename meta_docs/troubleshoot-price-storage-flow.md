@@ -82,7 +82,7 @@ curl -s -X POST "${BACKEND_URL}/price-storage" \
 
 ### 4. OpenClaw / gateway logs
 
-If the gateway runs under systemd, check logs for proxy errors (e.g. "Failed to forward /mnemospark cloud price-storage"):
+If the gateway runs under systemd, check logs for proxy errors (e.g. "Failed to forward /mnemospark-cloud price-storage"):
 
 ```bash
 journalctl -u openclaw-gateway.service -n 100 --no-pager

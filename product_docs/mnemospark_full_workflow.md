@@ -69,21 +69,22 @@ The complete workflow of mnenospark described from the point of view of the mnem
 
 These are the "slash commands" that are supported by the mnemospark plugin:
 
-- /mnemospark cloud
-- /mnemospark cloud help
-- /mnemospark cloud backup
-- /mnemospark cloud price-storage
-- /mnemospark cloud upload
-- /mnemospark cloud ls
-- /mnemospark cloud download
-- /mnemospark cloud delete
-- /mnemospark wallet
+- /mnemospark-cloud
+- /mnemospark-cloud help
+- /mnemospark-cloud backup
+- /mnemospark-cloud price-storage
+- /mnemospark-cloud upload
+- /mnemospark-cloud ls
+- /mnemospark-cloud download
+- /mnemospark-cloud delete
+- /mnemospark-wallet
+- /mnemospark-wallet export
 
 All storage commands that talk to the backend (**price-storage**, **upload**, **ls**, **download**, **delete**) **require** `--wallet-address <addr>`. Commands invoked without a wallet address will fail (e.g. "Cannot price storage", "Cannot list storage object"). Backend authentication is wallet proof (no shared API key); the proxy signs each request with the user's wallet.
 
 ### cloud command
 
-/mnemospark cloud and /mnemospark cloud help
+/mnemospark-cloud and /mnemospark-cloud help
 
 What this command does:
 
@@ -92,7 +93,7 @@ What this command does:
 
 ### help command
 
-/mnemospark cloud help
+/mnemospark-cloud help
 
 What this command does:
 
@@ -101,7 +102,7 @@ What this command does:
 
 ### backup command
 
-/mnemospark cloud backup `<file>` or `<directory>`
+/mnemospark-cloud backup `<file>` or `<directory>`
 
 Argument descriptions:  
 `<file>` file on local file system  
@@ -122,7 +123,7 @@ Only on MacOS or Linux
 
 ### price-storage command
 
-/mnemospark cloud price-storage --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>` --gb `<object-size-gb>` --provider `<provider>` --region `<location>`
+/mnemospark-cloud price-storage --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>` --gb `<object-size-gb>` --provider `<provider>` --region `<location>`
 
 Argument descriptions:
 
@@ -173,12 +174,12 @@ What this command does:
 1. Accepts response from **mnenospark-proxy**
 2. Writes to log file: `<YYYY-MM-DD HH:MM:SS>`,`<quote-id>`,`<storage-price>`,`<addr>`,`<object-id>`,`<object-id-hash>`,`<object-size-gb>`,`<provider>`,`<location>`
 3. Print message to user: Your storage quote `<quote-id>` is valid for 1 hour, the storage price is `<storage-price>` for `<object-id>` with file size of `<object-size-gb>` in `<provider>` `<location>`
-4. Print message to user: If you accept this quote run the command /mnemospark cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
+4. Print message to user: If you accept this quote run the command /mnemospark-cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
 5. If error, print message "Cannot price storage"
 
 ### upload command
 
-/mnemospark cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
+/mnemospark-cloud upload --quote-id `<quote-id>` --wallet-address `<addr>` --object-id `<object-id>` --object-id-hash `<object-id-hash>`
 
 Argument descriptions:
 
@@ -245,7 +246,7 @@ What this command does:
 
 ### ls command
 
-/mnemospark cloud ls --wallet-address `<addr>` --object-key `<object-key>`
+/mnemospark-cloud ls --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
@@ -291,7 +292,7 @@ What this command does:
 
 ### download command
 
-/mnemospark cloud download --wallet-address `<addr>` --object-key `<object-key>`
+/mnemospark-cloud download --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
@@ -338,7 +339,7 @@ What this command does:
 
 ### delete command
 
-/mnemospark cloud delete --wallet-address `<addr>` --object-key `<object-key>`
+/mnemospark-cloud delete --wallet-address `<addr>` --object-key `<object-key>`
 
 Argument descriptions:
 
@@ -386,6 +387,6 @@ What this command does:
 
 ### wallet command
 
-/mnemospark wallet
+/mnemospark-wallet
 
-What this command does: follows the existing implementation in the repo, and prints the balance of the wallet in either `~/.openclaw/blockrun` if it exists, or the mnemospark wallet directory, if not `~/.openclaw/mnemospark/key`. mnemospark uses the `MNEMOSPARK_WALLET_KEY` environment variable and the `/mnemospark wallet` command; the bare `/wallet` command and `BLOCKRUN_WALLET_KEY` are reserved for ClawRouter/Blockrun.
+What this command does: follows the existing implementation in the repo, and prints the balance of the wallet in either `~/.openclaw/blockrun` if it exists, or the mnemospark wallet directory, if not `~/.openclaw/mnemospark/key`. mnemospark uses the `MNEMOSPARK_WALLET_KEY` environment variable and the `/mnemospark-wallet` command; the bare `/wallet` command and `BLOCKRUN_WALLET_KEY` are reserved for ClawRouter/Blockrun.
