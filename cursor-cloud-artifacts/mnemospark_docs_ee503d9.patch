@@ -1,0 +1,248 @@
+From ee503d9f12d051aa28d4f75dda97dad768cf70c7 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Thu, 12 Mar 2026 07:30:11 +0000
+Subject: [PATCH] Update cloud process-flow docs for latest fixes
+
+---
+ meta_docs/cloud-backup-process-flow.md        |  2 +-
+ meta_docs/cloud-delete-process-flow.md        | 18 +++++++++---------
+ meta_docs/cloud-download-process-flow.md      | 14 +++++++-------
+ meta_docs/cloud-help-process-flow.md          |  2 +-
+ meta_docs/cloud-ls-process-flow.md            | 10 +++++-----
+ meta_docs/cloud-price-storage-process-flow.md | 10 +++++-----
+ meta_docs/cloud-upload-process-flow.md        | 13 +++++--------
+ 7 files changed, 33 insertions(+), 36 deletions(-)
+
+diff --git a/meta_docs/cloud-backup-process-flow.md b/meta_docs/cloud-backup-process-flow.md
+index de68ff9..7d65be3 100644
+--- a/meta_docs/cloud-backup-process-flow.md
++++ b/meta_docs/cloud-backup-process-flow.md
+@@ -279,7 +279,7 @@ Discrepancies or improvements identified while documenting the backup flow:
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | In `src/cloud-command.ts`, the upload path references the backup command in two error strings: "Run /mnemospark cloud price-storage first." (line 1274) and "Run /mnemospark cloud backup first." (line 1301). For consistency with the documented slash-command format, these should say `/mnemospark-cloud` (e.g. "Run /mnemospark-cloud backup first."). |
++| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | ✅ Implemented. `src/cloud-command.ts` now uses canonical slash-command names in those upload guidance strings (e.g. "Run /mnemospark-cloud backup first."). |
+ | 9.2 | Optional: Log backup success/failure | **mnemospark** | Low | The backup handler does not log. Adding an optional debug or info log when a backup succeeds (objectId, path) or fails (reason) would align with other flows and help support. Not required for correctness. |
+ | 9.3 | Backup object.log row format and parsing | **mnemospark** | Low | Backup appends a three-column row `objectId,objectIdHash,objectSizeGb` with no timestamp. Downstream parsers (e.g. for price-storage or upload) that read object.log must be able to distinguish backup rows from price-storage and upload rows (which use different column layouts). If the format is ever extended (e.g. add a type prefix or timestamp), ensure all readers are updated. No change required if the current contract is intentional and stable. |
+ 
+diff --git a/meta_docs/cloud-delete-process-flow.md b/meta_docs/cloud-delete-process-flow.md
+index c3ec698..40ffbf0 100644
+--- a/meta_docs/cloud-delete-process-flow.md
++++ b/meta_docs/cloud-delete-process-flow.md
+@@ -72,9 +72,9 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
+ #### Step 5 — Success Message
+ 
+ - Handler returns `formatStorageDeleteUserMessage(objectKey, cronEntry?.cronId ?? null, cronDeleted)`:
+-  - If cron was found and removed: `"File \`<object_key>\` has been deleted from the cloud and the cron job \`<cronId>\` has been deleted from your system."`
+-  - If cron was found but not in file: `"File \`<object_key>\` has been deleted from the cloud and the cron job \`<cronId>\` was not found in your system."`
+-  - If no cron found: `"File \`<object_key>\` has been deleted from the cloud and no matching cron job was found in your system."`
++  - If cron was found and removed: `"File \`<object_key>\` has been deleted from the cloud and the cron job \`<cronId>\` has been removed from local mnemospark cron tracking."`
++  - If cron was found but not in file: `"File \`<object_key>\` has been deleted from the cloud and the cron job \`<cronId>\` was not found in local mnemospark cron tracking."`
++  - If no cron found: `"File \`<object_key>\` has been deleted from the cloud and no matching cron job was found in local mnemospark cron tracking."`
+   - All variants append `"Thank you for using mnemospark!"`.
+ 
+ ---
+@@ -85,7 +85,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
+ 
+ #### Step 1 — Read and Parse Body
+ 
+-- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud delete"`.
++- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud delete"`.
+ - `parseStorageObjectRequest(payload)` validates `wallet_address` and `object_key`. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_key"`.
+ 
+ #### Step 2 — Wallet Match and Signature
+@@ -104,7 +104,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
+ 
+ - If `normalizeBackendAuthFailure(backendResponse)` indicates an auth/payment failure, proxy responds with that status and body and returns.
+ - Otherwise: `res.writeHead(backendResponse.status, ...)` and `res.end(backendResponse.bodyText)` (forwards backend response as-is).
+-- On any exception during the handler, proxy responds **502** with `"Failed to forward /mnemospark cloud delete: <message>"`.
++- On any exception during the handler, proxy responds **502** with `"Failed to forward /mnemospark-cloud delete: <message>"`.
+ 
+ ---
+ 
+@@ -293,7 +293,7 @@ sequenceDiagram
+         Note over CrontabTxt: Remove line for cronId, rewrite file
+         CrontabTxt-->>Client: true/false
+     end
+-    Client-->>User: "File <key> deleted from cloud; cron ... Thank you for using mnemospark!"
++    Client-->>User: "File <key> deleted from cloud; cron tracking updated ... Thank you for using mnemospark!"
+ ```
+ 
+ ---
+@@ -304,7 +304,7 @@ Discrepancies or improvements relative to the **goal** (delete the object from S
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud delete" and "Failed to forward /mnemospark cloud delete". Use `/mnemospark-cloud delete` for consistency. |
+-| 9.2 | Remove cron job from system crontab | **mnemospark** | High | The goal is to "remove the local system cron job that sends payment for the storage object." The client only updates the **tracking file** `~/.openclaw/mnemospark/crontab.txt`; it does **not** run `crontab` to remove the job from the user’s system crontab. If the system crontab is populated from this file (e.g. by another tool or by documentation), the user’s actual cron job may still run until they re-sync. Recommend: either (a) document that only the tracking file is updated and that the user must remove the job from system crontab manually (or via a documented sync step), or (b) implement removal from the system crontab (e.g. `crontab -l`, filter out the job by identifier/schedule, `crontab -` with the new content) so that "deleted from your system" accurately reflects the system crontab. |
++| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use the canonical form (`/mnemospark-cloud delete`). |
++| 9.2 | Remove cron job from system crontab | **mnemospark** | High | ⚠️ Partially addressed via option (a). The client still manages only `~/.openclaw/mnemospark/crontab.txt` (tracking file), but user-facing delete text now explicitly says "local mnemospark cron tracking" rather than claiming system crontab deletion. System crontab mutation remains out of scope unless explicitly implemented in a future change. |
+ | 9.3 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On delete failure, the handler returns only "Cannot delete file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
+-| 9.4 | Goal alignment summary | — | Verified | The flow **does** delete the object from S3 (and the bucket if empty). Cron-related behavior: the client removes the payment cron **entry from the tracking file** `crontab.txt` only; it does **not** modify the system crontab. If the product goal is to stop the system from running the payment job, 9.2 must be addressed. |
++| 9.4 | Goal alignment summary | — | Verified | The flow **does** delete the object from S3 (and the bucket if empty). Cron-related behavior is now explicitly documented in user output: the client removes the payment cron **entry from local tracking** (`crontab.txt`) only and does **not** modify system crontab. |
+diff --git a/meta_docs/cloud-download-process-flow.md b/meta_docs/cloud-download-process-flow.md
+index 8844c5f..130f688 100644
+--- a/meta_docs/cloud-download-process-flow.md
++++ b/meta_docs/cloud-download-process-flow.md
+@@ -70,7 +70,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
+ 
+ #### Step 1 — Read and Parse Body
+ 
+-- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud download"`.
++- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud download"`.
+ - `parseStorageObjectRequest(payload)` validates `wallet_address` and `object_key`. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_key"`.
+ 
+ #### Step 2 — Wallet Match and Signature
+@@ -266,11 +266,11 @@ sequenceDiagram
+     Note over Proxy: downloadStorageToDisk: fetch(presigned URL) → bytes
+     Proxy->>S3: GET presigned URL (proxy fetches object)
+     S3-->>Proxy: 200 + body (ciphertext)
+-    Note over Proxy: writeFile(outputDir/object_key, bytes)<br/>outputDir = process.cwd()
++    Note over Proxy: writeFile(outputDir/object_key, bytes)<br/>outputDir = MNEMOSPARK_DOWNLOAD_DIR or ~/.openclaw/mnemospark/downloads
+     Proxy->>FS: write file
+     FS-->>Proxy: OK
+     Proxy-->>Client: 200 { success, key, file_path, bytes_written }
+-    Client-->>User: "File <object_key> downloaded"
++    Client-->>User: "File <object_key> downloaded to <file_path>"
+ ```
+ 
+ ---
+@@ -281,9 +281,9 @@ Discrepancies or improvements relative to the **goal** (download the object from
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud download" and "Failed to forward /mnemospark cloud download". Use `/mnemospark-cloud download` for consistency. |
+-| 9.2 | Configurable download output directory | **mnemospark** | Medium | The proxy calls `downloadStorageToDisk(requestPayload, backendResponse)` with no third argument, so `outputDir` is `process.cwd()` (gateway’s cwd). The file may end up in an unexpected or non-user-visible directory. Recommend: support a configurable download directory (e.g. `MNEMOSPARK_DOWNLOAD_DIR` or `~/.openclaw/mnemospark/downloads`) and pass it as `outputDir` so the user can find the file. |
+-| 9.3 | Show file path in success message | **mnemospark** | Medium | The proxy returns `file_path` in the JSON; the client does not include it in the success message. For "so that the file can be used", the user needs to know where the file is. Recommend: include the returned `file_path` in the client success message (e.g. "File &lt;object_key&gt; downloaded to &lt;file_path&gt;"). |
++| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud download`. |
++| 9.2 | Configurable download output directory | **mnemospark** | Medium | ✅ Implemented. Proxy now resolves output directory from `MNEMOSPARK_DOWNLOAD_DIR`, falling back to `~/.openclaw/mnemospark/downloads`, and passes it into `downloadStorageToDisk(..., { outputDir })`. |
++| 9.3 | Show file path in success message | **mnemospark** | Medium | ✅ Implemented. The client success message now includes the returned local `file_path` ("downloaded to ..."). |
+ | 9.4 | Decryption for "file can be used" | **mnemospark / mnemospark-backend** | High | Upload stores **encrypted** content in S3 (client-side AES-256-GCM). The download backend returns a presigned URL to that **ciphertext**; the proxy writes it to disk as-is. So the downloaded file is **encrypted** and not directly usable without decryption. To align with "so that the file can be used" (plain file), either: (a) document that the current flow returns the encrypted object and that decryption is out of scope or the user’s responsibility, or (b) implement decryption (e.g. backend decrypts with KEK and streams plaintext, or client decrypts after download using the same KEK resolution as upload). |
+ | 9.5 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On download failure, the handler returns only "Cannot download file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
+-| 9.6 | Goal alignment summary | — | Verified | The flow **does** download the object from S3 to the local host (proxy fetches via presigned URL and writes to disk). Gaps for "file can be used" are: (1) user is not told the file path (9.3), (2) output directory is not configurable (9.2), (3) file is encrypted (9.4). |
++| 9.6 | Goal alignment summary | — | Verified | The flow **does** download the object from S3 to the local host (proxy fetches via presigned URL and writes to disk), now with explicit file path messaging and configurable output directory. Remaining gap for "file can be used" is encryption/decryption scope (9.4). |
+diff --git a/meta_docs/cloud-help-process-flow.md b/meta_docs/cloud-help-process-flow.md
+index b825be0..30fb688 100644
+--- a/meta_docs/cloud-help-process-flow.md
++++ b/meta_docs/cloud-help-process-flow.md
+@@ -225,7 +225,7 @@ Discrepancies or improvements identified while documenting the help flow:
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Unify slash-command string in proxy error messages | **mnemospark** | Low | In `src/proxy.ts`, error messages and comments still use the space form `"/mnemospark cloud ..."` (e.g. "Invalid JSON body for /mnemospark cloud price-storage", "Failed to forward /mnemospark cloud upload"). For consistency with the documented slash-command format, update these to `"/mnemospark-cloud ..."` so that user-facing and log messages match the canonical command names. |
++| 9.1 | Unify slash-command string in proxy error messages | **mnemospark** | Low | ✅ Implemented. Proxy messages now consistently use the canonical slash-command form (`/mnemospark-cloud ...`). |
+ | 9.2 | Optional: Log help/unknown at debug level | **mnemospark** | Low | The help handler does not log when help or unknown is requested. If the plugin API exposes a logger in the command context, adding a single debug log (e.g. "mnemospark-cloud help requested" / "unknown subcommand") would align with other commands that log and aid support. Optional; not required for correctness. |
+ | 9.3 | Optional: UX for unknown subcommand | **mnemospark** | Low | When `parsed.mode === "unknown"`, the handler returns the full help text with `isError: true`. Some UIs may show the whole block in red. Alternatives: (a) return a short error line plus the same help text with `isError: false` for the help part, or (b) keep current behavior and document that unknown subcommand shows help in error style. No change required for backend; client-only UX choice. |
+ 
+diff --git a/meta_docs/cloud-ls-process-flow.md b/meta_docs/cloud-ls-process-flow.md
+index 04ec6ad..80cfaac 100644
+--- a/meta_docs/cloud-ls-process-flow.md
++++ b/meta_docs/cloud-ls-process-flow.md
+@@ -73,7 +73,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket; defaults on
+ 
+ #### Step 1 — Read and Parse Body
+ 
+-- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud ls"`.
++- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud ls"`.
+ - `parseStorageObjectRequest(payload)` validates `wallet_address` and `object_key`. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_key"`.
+ 
+ #### Step 2 — Wallet Match
+@@ -90,11 +90,11 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket; defaults on
+   - **URL**: `POST {MNEMOSPARK_BACKEND_API_BASE_URL}/storage/ls`.
+   - **Headers**: `Content-Type: application/json`, `X-Wallet-Signature`.
+   - **Body**: Same JSON (`wallet_address`, `object_key`, `location` if present).
+-- If `backendBaseUrl` or `walletSignature` is missing, `forwardStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "Failed to forward /mnemospark cloud ls: ...".
++- If `backendBaseUrl` or `walletSignature` is missing, `forwardStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "Failed to forward /mnemospark-cloud ls: ...".
+ 
+ #### Step 5 — Relay Response
+ 
+-- Forwards the backend's status code and body (and auth/payment headers if any). On proxy exception, **502** with "Failed to forward /mnemospark cloud ls: ...".
++- Forwards the backend's status code and body (and auth/payment headers if any). On proxy exception, **502** with "Failed to forward /mnemospark-cloud ls: ...".
+ 
+ ---
+ 
+@@ -277,7 +277,7 @@ Discrepancies or improvements relative to the **goal** (successful listing of th
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud ls" and "Failed to forward /mnemospark cloud ls". Use `/mnemospark-cloud ls` for consistency with docs and slash-command format. |
++| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud ls`. |
+ | 9.2 | Surface backend error detail on ls failure | **mnemospark** | Medium | On proxy/backend failure, the handler catches and returns only "Cannot list storage object" with no backend message. Including the response body (or a short error message) when non-OK would help users distinguish 404 (bucket/object not found) from 403/502. |
+-| 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | `services/storage-ls/app.py` has no structured logging. Adding a logger and log events for request (wallet, key), bucket, and 404/500 would improve diagnostics. |
++| 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | ✅ Implemented. `services/storage-ls/app.py` now emits structured logs for request parsing, auth confirmation, success, and 4xx/5xx error paths. |
+ | 9.4 | Goal alignment | **mnemospark / mnemospark-backend** | Verified | The flow **does** align with the goal: the user supplies `--wallet-address` and `--object-key`, and the backend returns metadata (key, size_bytes, bucket) for that **one** object in the wallet's S3 bucket via `head_object`. This is a single-object listing, not a full bucket list; no change required for that contract. |
+diff --git a/meta_docs/cloud-price-storage-process-flow.md b/meta_docs/cloud-price-storage-process-flow.md
+index 6a36cd5..954c942 100644
+--- a/meta_docs/cloud-price-storage-process-flow.md
++++ b/meta_docs/cloud-price-storage-process-flow.md
+@@ -86,7 +86,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
+ 
+ #### Step 1 — Read and Parse Body
+ 
+-- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud price-storage"` (message uses space form; see Recommended Code Changes).
++- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud price-storage"`.
+ - `parsePriceStorageQuoteRequest(payload)` validates required fields. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_id, object_id_hash, gb, provider, region"`.
+ 
+ #### Step 2 — Wallet Signature (Optional)
+@@ -99,13 +99,13 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
+   - **URL**: `POST {MNEMOSPARK_BACKEND_API_BASE_URL}/price-storage`.
+   - **Headers**: `Content-Type: application/json`, and `X-Wallet-Signature` if present.
+   - **Body**: Same JSON as received from the client.
+-- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark cloud price-storage: ...".
++- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark-cloud price-storage: ...".
+ 
+ #### Step 4 — Relay Response
+ 
+ - Proxy forwards the backend's status code, body, and payment-related headers (e.g. `PAYMENT-REQUIRED`, `x-payment-required`) to the client. No body transformation.
+ - If `normalizeBackendAuthFailure()` detects an auth failure (401/403), proxy sends that status and body. For price-storage, wallet is optional so auth failure is less common.
+-- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark cloud price-storage: <error>"`.
++- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark-cloud price-storage: <error>"`.
+ 
+ ---
+ 
+@@ -310,7 +310,7 @@ Discrepancies or improvements relative to the **goal** (successful quote for S3
+ 
+ | # | Change | Repo | Severity | Description |
+ |---|--------|------|----------|-------------|
+-| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud price-storage" and "Failed to forward /mnemospark cloud price-storage". For consistency with docs and slash-command format, use `/mnemospark-cloud price-storage`. Same for other commands in proxy and for upload error messages in cloud-command.ts that reference "Run /mnemospark cloud price-storage first." |
+-| 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | `services/price-storage/app.py` has no structured logging (only a `print` when authorizer wallet is present). Adding a logger and log events for request parsed, storage_cost, transfer_cost, quote_id, and errors would align with storage-upload and improve diagnostics. |
++| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | ✅ Implemented. Proxy/client messaging now uses the canonical slash-command format (`/mnemospark-cloud ...`) including price-storage and upload guidance text. |
++| 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | ✅ Implemented. `services/price-storage/app.py` now emits structured logs for request parsing, computed costs/markup, quote write, and bad-request/internal-error paths. |
+ | 9.3 | BCM integration test / key validation | **mnemospark-backend** | Medium | Per mnemospark-backend AGENTS.md, the integration test `test_real_bcm_estimate_or_skip_when_no_credentials` (e.g. in estimate-storage or related tests) can fail with BCM `ValidationException` (e.g. key format `[a-zA-Z0-9]*`). If any BCM usage key (in estimate-storage or estimate-transfer) uses hyphens or other invalid characters, fix the key to satisfy BCM so real deployments and integration tests succeed. Current estimate-storage uses `s3stor01` and estimate-transfer uses `dtxfer01`; if other code paths or tests use different keys, ensure they are valid. |
+ | 9.4 | Goal alignment | **mnemospark-backend** | Verified | The current flow **does** align with the goal: backend uses `--gb`, `--provider`, and `--region` to compute S3 storage cost (estimate-storage) and outbound data transfer cost (estimate-transfer with `PRICE_STORAGE_TRANSFER_DIRECTION: out`), then applies markup and returns a single `storage_price`. No change required for goal alignment; 9.2 and 9.3 improve robustness and observability. |
+diff --git a/meta_docs/cloud-upload-process-flow.md b/meta_docs/cloud-upload-process-flow.md
+index ed416ec..de508e8 100644
+--- a/meta_docs/cloud-upload-process-flow.md
++++ b/meta_docs/cloud-upload-process-flow.md
+@@ -706,22 +706,19 @@ The following items were identified after the original five fixes (8.1–8.5). T
+ 
+ | # | Issue | Severity | Status | Notes |
+ |---|---|---|---|---|
+-| 9.1 | Client Does Not Handle 207 (S3 Failure After Payment) | High | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Returns 207 with `upload_failed: true` and `trans_id`; idempotency marked `retryable` so retries skip payment. **Client (mnemospark):** fix-06 adds auto-retry in `requestStorageUploadViaProxy()` and clear error with `trans_id` when retries are exhausted. |
+-| 9.2 | Presigned Upload Has No Backend Confirmation Step | Medium | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Two-phase presigned flow implemented. Presigned uploads mark idempotency `pending_confirmation`, return `confirmation_required: true`, and defer transaction log and quote deletion. `POST /storage/upload/confirm` (StorageUploadConfirmFunction) verifies S3 object via `head_object`, then writes transaction log, deletes quote, and marks idempotency `completed`. **Client (mnemospark):** fix-08 adds `confirmPresignedUploadViaProxy()` and proxy route for `/mnemospark/upload/confirm`; upload handler calls confirm after presigned S3 PUT when `confirmation_required` is true. |
++| 9.1 | Client Does Not Handle 207 (S3 Failure After Payment) | High | **RESOLVED (backend + client)** | **Backend (mnemospark-backend):** Returns 207 with `upload_failed: true` and `trans_id`; idempotency marked `retryable` so retries skip payment. **Client (mnemospark):** handles retryable 207 in `requestStorageUploadViaProxy()` with retries and clear `trans_id` error when retries are exhausted. |
++| 9.2 | Presigned Upload Has No Backend Confirmation Step | Medium | **RESOLVED (backend + client)** | **Backend (mnemospark-backend):** Two-phase presigned flow implemented. Presigned uploads mark idempotency `pending_confirmation`, return `confirmation_required: true`, and defer transaction log and quote deletion. `POST /storage/upload/confirm` verifies S3 object, writes transaction log, deletes quote, and marks idempotency `completed`. **Client (mnemospark):** now calls confirm after presigned S3 PUT when `confirmation_required` is true, and surfaces actionable errors if confirmation fails (including `trans_id` and `idempotency_key`). |
+ | 9.3 | Client x402 Retry Sends Full Body to Proxy Again | Low | **NOT IMPLEMENTED** | When the x402 wrapper retries after 402, it re-sends the full request body. For presigned mode the body is small; impact is negligible. No fix required at this time. Note for future consideration. |
+ 
+ ---
+ 
+ ## 10. Remaining Blockers to Successful Payment and S3 Upload
+ 
+-With 9.1 and 9.2 implemented **in mnemospark-backend**, the backend supports:
++With 9.1 and 9.2 implemented **across backend and client**, the system supports:
+ 
+ - **Inline:** 207 on S3 failure after payment, retryable idempotency, and full success path.
+ - **Presigned:** Two-phase flow with `confirmation_required` and `POST /storage/upload/confirm`.
+ 
+-For **end-to-end success** (payment + file in S3):
++For **end-to-end success** (payment + file in S3), no additional backend or client blockers are currently identified for inline and presigned paths.
+ 
+-- **Inline:** The client (mnemospark) must handle 207 with auto-retry (fix-06). If the client has not been updated, a 207 response still causes `parseStorageUploadResponse()` to throw and the user sees a generic error; the backend is ready for retries.
+-- **Presigned:** The client (mnemospark) must call the confirm endpoint after the presigned S3 PUT (fix-08). If the client has not been updated, the transaction log is never written and the upload is not finalized until/unless the client is updated to call confirm.
+-
+-**No additional backend fixes are required** for the stated goal. Any remaining gaps are client-side (fix-06 and fix-08 in mnemospark) if those have not yet been implemented.
++**Remaining caution:** item 9.3 (x402 retry body resend) remains intentionally not implemented due low impact.
+-- 
+2.43.0
+

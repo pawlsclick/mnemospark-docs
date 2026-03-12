@@ -1,0 +1,11 @@
+# Apply mnemospark commit
+cd <your-mnemospark-clone>
+git checkout -b fix/cloud-messaging-and-logging
+git am /path/to/mnemospark_d93b5ef.patch
+git push origin fix/cloud-messaging-and-logging
+
+# Apply mnemospark-docs commit
+cd <your-mnemospark-docs-clone>
+git checkout -b docs/cloud-flow-updates
+git am /path/to/mnemospark_docs_ee503d9.patch
+git push origin docs/cloud-flow-updates

@@ -1,0 +1,653 @@
+From 82f3176748b6dd3a6bad24a58f778aa3c2f4ef5a Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Thu, 12 Mar 2026 06:48:49 +0000
+Subject: [PATCH 1/2] Add presigned upload confirmation flow
+
+---
+ src/cloud-command.test.ts       | 107 ++++++++++++++++++++++++++++
+ src/cloud-command.ts            |  34 +++++++--
+ src/cloud-price-storage.test.ts |  79 +++++++++++++++++++++
+ src/cloud-price-storage.ts      | 119 ++++++++++++++++++++++++++++++++
+ src/proxy.ts                    |  78 +++++++++++++++++++++
+ 5 files changed, 413 insertions(+), 4 deletions(-)
+
+diff --git a/src/cloud-command.test.ts b/src/cloud-command.test.ts
+index 700be80..f9c4e4a 100644
+--- a/src/cloud-command.test.ts
++++ b/src/cloud-command.test.ts
+@@ -589,6 +589,113 @@ describe("cloud command", () => {
+     expect(result.text).toBe("Insufficient USDC balance. Current: $0.10, Required: $2.75");
+   });
+ 
++  it("confirms presigned uploads before logging success", async () => {
++    const { homeDir, tmpBackupDir } = await createSandbox();
++    const walletKey = `0x${"55".repeat(32)}` as const;
++    const walletAddress = privateKeyToAccount(walletKey).address;
++    const objectId = "obj-upload-presigned-confirm-001";
++    const archiveContent = "x".repeat(4_500_100);
++    const objectHash = sha256Hex(archiveContent);
++    await writeFile(join(tmpBackupDir, objectId), archiveContent, "utf-8");
++
++    const objectLogPath = join(homeDir, ".openclaw", "mnemospark", "object.log");
++    await mkdir(join(homeDir, ".openclaw", "mnemospark"), { recursive: true });
++    await writeFile(
++      objectLogPath,
++      `2026-02-25 19:00:00,quote-presigned-confirm,2.75,${walletAddress},${objectId},${objectHash},0.015,aws,[REDACTED]\n`,
++      "utf-8",
++    );
++
++    let capturedConfirmRequest: Record<string, unknown> | undefined;
++    let presignedPutCount = 0;
++    const command = createCloudCommand({
++      objectLogHomeDir: homeDir,
++      backupOptions: { tmpDir: tmpBackupDir },
++      resolveWalletPrivateKeyFn: async () => walletKey,
++      idempotencyKeyFn: () => "idemp-presigned-confirm-123",
++      nowDateFn: () => new Date(2026, 1, 25, 20, 45, 0),
++      fetchImpl: async (input, init) => {
++        presignedPutCount += 1;
++        expect(String(input)).toBe("https://example-presigned-upload.local/put");
++        expect(init?.method).toBe("PUT");
++        return new Response("", { status: 200 });
++      },
++      createPaymentFetchFn: () => ({
++        fetch: async () =>
++          new Response(
++            JSON.stringify({
++              quote_id: "quote-presigned-confirm",
++              addr: walletAddress,
++              addr_hash: "addr-hash",
++              trans_id: "tx-initial",
++              storage_price: 2.75,
++              object_id: objectId,
++              object_key: "obj-upload-presigned-confirm-001.tar.gz.enc",
++              provider: "aws",
++              bucket_name: "mnemospark-1234",
++              location: "[REDACTED]",
++              upload_url: "https://example-presigned-upload.local/put",
++              upload_headers: {
++                "content-type": "application/octet-stream",
++                "x-amz-meta-wrapped-dek": "wrapped",
++              },
++              confirmation_required: true,
++            }),
++            {
++              status: 200,
++              headers: { "Content-Type": "application/json" },
++            },
++          ),
++        cache: new PaymentCache(),
++      }),
++      requestStorageUploadConfirmFn: async (request) => {
++        capturedConfirmRequest = request as Record<string, unknown>;
++        return {
++          quote_id: "quote-presigned-confirm",
++          addr: walletAddress,
++          addr_hash: "addr-hash",
++          trans_id: "tx-confirmed",
++          storage_price: 2.75,
++          object_id: objectId,
++          object_key: "obj-upload-presigned-confirm-001.tar.gz.enc",
++          provider: "aws",
++          bucket_name: "mnemospark-1234",
++          location: "[REDACTED]",
++        };
++      },
++    });
++
++    const result = await command.handler({
++      channel: "test",
++      isAuthorizedSender: true,
++      args: [
++        "upload",
++        "--quote-id quote-presigned-confirm",
++        `--wallet-address ${walletAddress}`,
++        `--object-id ${objectId}`,
++        `--object-id-hash ${objectHash}`,
++      ].join(" "),
++      commandBody: "upload",
++      config: {},
++    });
++
++    expect(result.isError).not.toBe(true);
++    expect(presignedPutCount).toBe(1);
++    expect(capturedConfirmRequest).toEqual({
++      quote_id: "quote-presigned-confirm",
++      wallet_address: walletAddress,
++      object_key: "obj-upload-presigned-confirm-001.tar.gz.enc",
++      idempotency_key: "idemp-presigned-confirm-123",
++    });
++
++    const logContent = await readFile(objectLogPath, "utf-8");
++    const logLines = logContent.trim().split("\n");
++    const uploadLogLine = logLines.at(-2);
++    expect(uploadLogLine).toBe(
++      `2026-02-25 20:45:00,quote-presigned-confirm,${walletAddress},addr-hash,tx-confirmed,2.75,obj-upload-presigned-confirm-001,obj-upload-presigned-confirm-001.tar.gz.enc,aws,mnemospark-1234,[REDACTED]`,
++    );
++  });
++
+   it("returns error when presigned upload response is missing upload URL", async () => {
+     const { homeDir, tmpBackupDir } = await createSandbox();
+     const walletKey = `0x${"33".repeat(32)}` as const;
+diff --git a/src/cloud-command.ts b/src/cloud-command.ts
+index c978660..6158ead 100644
+--- a/src/cloud-command.ts
++++ b/src/cloud-command.ts
+@@ -12,14 +12,17 @@ import { basename, dirname, join, resolve } from "node:path";
+ import { privateKeyToAccount } from "viem/accounts";
+ 
+ import {
++  requestStorageUploadConfirmViaProxy,
+   requestStorageUploadViaProxy,
+   parsePriceStorageQuoteRequest,
+   requestPriceStorageViaProxy,
++  type StorageUploadConfirmRequest,
+   type StorageUploadRequest,
+   type StorageUploadResponse,
+   type UploadPayload,
+   type PriceStorageQuoteRequest,
+   type PriceStorageQuoteResponse,
++  type ProxyUploadConfirmOptions,
+   type ProxyQuoteOptions,
+   type ProxyUploadOptions,
+ } from "./cloud-price-storage.js";
+@@ -158,6 +161,10 @@ type CreateCloudCommandOptions = {
+     request: StorageUploadRequest,
+     options?: ProxyUploadOptions,
+   ) => Promise<StorageUploadResponse>;
++  requestStorageUploadConfirmFn?: (
++    request: StorageUploadConfirmRequest,
++    options?: ProxyUploadConfirmOptions,
++  ) => Promise<StorageUploadResponse>;
+   resolveWalletPrivateKeyFn?: (homeDir?: string) => Promise<`0x${string}`>;
+   createPaymentFetchFn?: (privateKey: `0x${string}`) => PaymentFetchResult;
+   fetchImpl?: FetchLike;
+@@ -165,6 +172,7 @@ type CreateCloudCommandOptions = {
+   idempotencyKeyFn?: () => string;
+   proxyQuoteOptions?: ProxyQuoteOptions;
+   proxyUploadOptions?: ProxyUploadOptions;
++  proxyUploadConfirmOptions?: ProxyUploadConfirmOptions;
+   requestStorageLsFn?: (
+     request: StorageObjectRequest,
+     options?: ProxyStorageOptions,
+@@ -1159,6 +1167,8 @@ export function createCloudCommand(
+   const requestPriceStorageQuote =
+     options.requestPriceStorageQuoteFn ?? requestPriceStorageViaProxy;
+   const requestStorageUpload = options.requestStorageUploadFn ?? requestStorageUploadViaProxy;
++  const requestStorageUploadConfirm =
++    options.requestStorageUploadConfirmFn ?? requestStorageUploadConfirmViaProxy;
+   const resolveWalletKey = options.resolveWalletPrivateKeyFn ?? resolveWalletPrivateKey;
+   const createPayment = options.createPaymentFetchFn ?? createPaymentFetch;
+   const fetchImpl = options.fetchImpl ?? fetch;
+@@ -1359,15 +1369,31 @@ export function createCloudCommand(
+             preparedPayload.encryptedContent,
+             fetchImpl,
+           );
+-          await appendStorageUploadLog(uploadResponse, objectLogHomeDir, nowDateFn);
++          let finalizedUploadResponse = uploadResponse;
++          if (
++            preparedPayload.payload.mode === "presigned" &&
++            uploadResponse.confirmation_required === true
++          ) {
++            finalizedUploadResponse = await requestStorageUploadConfirm(
++              {
++                quote_id: uploadResponse.quote_id,
++                wallet_address: parsed.uploadRequest.wallet_address,
++                object_key: uploadResponse.object_key,
++                idempotency_key: idempotencyKey,
++              },
++              options.proxyUploadConfirmOptions,
++            );
++          }
++
++          await appendStorageUploadLog(finalizedUploadResponse, objectLogHomeDir, nowDateFn);
+           const cronStoragePriceCandidate =
+-            uploadResponse.storage_price ?? loggedQuote.storagePrice;
++            finalizedUploadResponse.storage_price ?? loggedQuote.storagePrice;
+           const cronStoragePrice =
+             Number.isFinite(cronStoragePriceCandidate) && cronStoragePriceCandidate > 0
+               ? cronStoragePriceCandidate
+               : loggedQuote.storagePrice;
+           const cronJob = await createStoragePaymentCronJob(
+-            uploadResponse,
++            finalizedUploadResponse,
+             cronStoragePrice,
+             objectLogHomeDir,
+             nowDateFn,
+@@ -1375,7 +1401,7 @@ export function createCloudCommand(
+           await maybeCleanupLocalBackupArchive(archivePath);
+ 
+           return {
+-            text: formatStorageUploadUserMessage(uploadResponse, cronJob.cronId),
++            text: formatStorageUploadUserMessage(finalizedUploadResponse, cronJob.cronId),
+           };
+         } catch (error) {
+           const uploadErrorMessage = extractUploadErrorMessage(error);
+diff --git a/src/cloud-price-storage.test.ts b/src/cloud-price-storage.test.ts
+index 8b6a76f..df62e3f 100644
+--- a/src/cloud-price-storage.test.ts
++++ b/src/cloud-price-storage.test.ts
+@@ -2,10 +2,13 @@ import { describe, expect, it, vi } from "vitest";
+ 
+ import {
+   forwardPriceStorageToBackend,
++  forwardStorageUploadConfirmToBackend,
+   forwardStorageUploadToBackend,
+   requestPriceStorageViaProxy,
++  requestStorageUploadConfirmViaProxy,
+   requestStorageUploadViaProxy,
+   type PriceStorageQuoteRequest,
++  type StorageUploadConfirmRequest,
+   type StorageUploadRequest,
+ } from "./cloud-price-storage.js";
+ 
+@@ -45,6 +48,13 @@ const SAMPLE_UPLOAD_REQUEST_PRESIGNED: StorageUploadRequest = {
+   },
+ };
+ 
++const SAMPLE_UPLOAD_CONFIRM_REQUEST: StorageUploadConfirmRequest = {
++  quote_id: "quote-123",
++  wallet_address: "0x1234abcd",
++  object_key: "obj-001.tar.gz.enc",
++  idempotency_key: "idemp-123",
++};
++
+ describe("cloud price-storage transport", () => {
+   it("sends price-storage request to local proxy and parses quote response", async () => {
+     let capturedUrl = "";
+@@ -135,6 +145,7 @@ describe("cloud price-storage transport", () => {
+             object_key: "obj-001.tar.gz.enc",
+             provider: "aws",
+             bucket_name: "mnemospark-1234",
++            confirmation_required: true,
+             location: "us-east-1",
+           }),
+           {
+@@ -150,6 +161,43 @@ describe("cloud price-storage transport", () => {
+     const headers = capturedInit?.headers as Record<string, string>;
+     expect(headers["Idempotency-Key"]).toBe("idemp-123");
+     expect(upload.object_key).toBe("obj-001.tar.gz.enc");
++    expect(upload.confirmation_required).toBe(true);
++  });
++
++  it("sends upload confirm request to local proxy and parses response", async () => {
++    let capturedUrl = "";
++    let capturedInit: RequestInit | undefined;
++
++    const upload = await requestStorageUploadConfirmViaProxy(SAMPLE_UPLOAD_CONFIRM_REQUEST, {
++      proxyBaseUrl: "http://127.0.0.1:7120/",
++      fetchImpl: async (input, init) => {
++        capturedUrl = String(input);
++        capturedInit = init;
++        return new Response(
++          JSON.stringify({
++            quote_id: "quote-123",
++            addr: "0x1234abcd",
++            addr_hash: "addr-hash",
++            trans_id: "tx-confirm-001",
++            storage_price: 2.75,
++            object_id: "obj-001",
++            object_key: "obj-001.tar.gz.enc",
++            provider: "aws",
++            bucket_name: "mnemospark-1234",
++            location: "[REDACTED]",
++          }),
++          {
++            status: 200,
++            headers: { "Content-Type": "application/json" },
++          },
++        );
++      },
++    });
++
++    expect(capturedUrl).toBe("http://127.0.0.1:7120/mnemospark/upload/confirm");
++    expect(capturedInit?.method).toBe("POST");
++    expect(capturedInit?.body).toBe(JSON.stringify(SAMPLE_UPLOAD_CONFIRM_REQUEST));
++    expect(upload.trans_id).toBe("tx-confirm-001");
+   });
+ 
+   it("retries upload on 207 upload_failed and succeeds on retry", async () => {
+@@ -357,6 +405,37 @@ describe("cloud price-storage transport", () => {
+     expect(forwardedBody.object_key).toBe(SAMPLE_UPLOAD_REQUEST_PRESIGNED.object_id);
+   });
+ 
++  it("forwards upload confirm request to backend with wallet signature", async () => {
++    let capturedUrl = "";
++    let capturedInit: RequestInit | undefined;
++
++    const forwarded = await forwardStorageUploadConfirmToBackend(SAMPLE_UPLOAD_CONFIRM_REQUEST, {
++      backendBaseUrl: "https://api.example.com/prod/",
++      walletSignature: "wallet-proof-header",
++      fetchImpl: async (input, init) => {
++        capturedUrl = String(input);
++        capturedInit = init;
++        return new Response(JSON.stringify({ ok: true }), {
++          status: 200,
++          headers: {
++            "Content-Type": "application/json",
++            "PAYMENT-RESPONSE": "response-header",
++          },
++        });
++      },
++    });
++
++    expect(capturedUrl).toBe("https://api.example.com/prod/storage/upload/confirm");
++    expect(capturedInit?.method).toBe("POST");
++    const headers = capturedInit?.headers as Record<string, string>;
++    expect(headers["X-Wallet-Signature"]).toBe("wallet-proof-header");
++    expect(headers["x-api-key"]).toBeUndefined();
++    const forwardedBody = JSON.parse(String(capturedInit?.body)) as Record<string, unknown>;
++    expect(forwardedBody).toEqual(SAMPLE_UPLOAD_CONFIRM_REQUEST);
++    expect(forwarded.status).toBe(200);
++    expect(forwarded.paymentResponse).toBe("response-header");
++  });
++
+   it("requires wallet proof for upload forwarding", async () => {
+     await expect(
+       forwardStorageUploadToBackend(SAMPLE_UPLOAD_REQUEST, {
+diff --git a/src/cloud-price-storage.ts b/src/cloud-price-storage.ts
+index a74bcb5..4838043 100644
+--- a/src/cloud-price-storage.ts
++++ b/src/cloud-price-storage.ts
+@@ -11,6 +11,7 @@ import { normalizeWalletSignature } from "./wallet-signature.js";
+ 
+ export const PRICE_STORAGE_PROXY_PATH = "/mnemospark/price-storage";
+ export const UPLOAD_PROXY_PATH = "/mnemospark/upload";
++export const UPLOAD_CONFIRM_PROXY_PATH = "/mnemospark/upload/confirm";
+ 
+ export type PriceStorageQuoteRequest = {
+   wallet_address: string;
+@@ -53,6 +54,13 @@ export type StorageUploadRequest = {
+   payload: UploadPayload;
+ };
+ 
++export type StorageUploadConfirmRequest = {
++  quote_id: string;
++  wallet_address: string;
++  object_key: string;
++  idempotency_key: string;
++};
++
+ export type StorageUploadResponse = {
+   quote_id: string;
+   addr: string;
+@@ -66,6 +74,7 @@ export type StorageUploadResponse = {
+   location: string;
+   upload_url?: string;
+   upload_headers?: Record<string, string>;
++  confirmation_required?: boolean;
+ };
+ 
+ type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+@@ -82,6 +91,11 @@ type ProxyUploadOptions = {
+   maxRetries?: number;
+ };
+ 
++type ProxyUploadConfirmOptions = {
++  proxyBaseUrl?: string;
++  fetchImpl?: FetchLike;
++};
++
+ type BackendQuoteOptions = {
+   backendBaseUrl?: string;
+   walletSignature?: string;
+@@ -97,6 +111,12 @@ type BackendUploadOptions = {
+   idempotencyKey?: string;
+ };
+ 
++type BackendUploadConfirmOptions = {
++  backendBaseUrl?: string;
++  walletSignature?: string;
++  fetchImpl?: FetchLike;
++};
++
+ type BackendQuoteForwardResult = {
+   status: number;
+   bodyText: string;
+@@ -269,6 +289,31 @@ export function parseStorageUploadRequest(payload: unknown): StorageUploadReques
+   };
+ }
+ 
++export function parseStorageUploadConfirmRequest(
++  payload: unknown,
++): StorageUploadConfirmRequest | null {
++  const record = asRecord(payload);
++  if (!record) {
++    return null;
++  }
++
++  const quoteId = asNonEmptyString(record.quote_id);
++  const walletAddress = asNonEmptyString(record.wallet_address);
++  const objectKey = asNonEmptyString(record.object_key);
++  const idempotencyKey = asNonEmptyString(record.idempotency_key);
++
++  if (!quoteId || !walletAddress || !objectKey || !idempotencyKey) {
++    return null;
++  }
++
++  return {
++    quote_id: quoteId,
++    wallet_address: walletAddress,
++    object_key: objectKey,
++    idempotency_key: idempotencyKey,
++  };
++}
++
+ export function parseStorageUploadResponse(payload: unknown): StorageUploadResponse {
+   const record = asRecord(payload);
+   if (!record) {
+@@ -288,6 +333,8 @@ export function parseStorageUploadResponse(payload: unknown): StorageUploadRespo
+   const uploadUrl = asNonEmptyString(record.upload_url);
+   const uploadHeaders =
+     record.upload_headers === undefined ? undefined : asStringRecord(record.upload_headers);
++  const confirmationRequired =
++    typeof record.confirmation_required === "boolean" ? record.confirmation_required : undefined;
+ 
+   if (!quoteId || !addr || !objectId || !objectKey || !provider || !bucketName || !location) {
+     throw new Error("Upload response is missing required fields");
+@@ -296,6 +343,9 @@ export function parseStorageUploadResponse(payload: unknown): StorageUploadRespo
+   if (record.upload_headers !== undefined && !uploadHeaders) {
+     throw new Error("Upload response has invalid upload_headers");
+   }
++  if (record.confirmation_required !== undefined && confirmationRequired === undefined) {
++    throw new Error("Upload response has invalid confirmation_required");
++  }
+ 
+   return {
+     quote_id: quoteId,
+@@ -310,6 +360,7 @@ export function parseStorageUploadResponse(payload: unknown): StorageUploadRespo
+     location,
+     upload_url: uploadUrl ?? undefined,
+     upload_headers: uploadHeaders ?? undefined,
++    confirmation_required: confirmationRequired,
+   };
+ }
+ 
+@@ -446,6 +497,36 @@ export async function requestStorageUploadViaProxy(
+   return parseStorageUploadResponse(payload);
+ }
+ 
++export async function requestStorageUploadConfirmViaProxy(
++  request: StorageUploadConfirmRequest,
++  options: ProxyUploadConfirmOptions = {},
++): Promise<StorageUploadResponse> {
++  const fetchImpl = options.fetchImpl ?? fetch;
++  const baseUrl = normalizeBaseUrl(
++    options.proxyBaseUrl ?? `http://127.0.0.1:${PROXY_PORT.toString()}`,
++  );
++  const response = await fetchImpl(`${baseUrl}${UPLOAD_CONFIRM_PROXY_PATH}`, {
++    method: "POST",
++    headers: {
++      "Content-Type": "application/json",
++    },
++    body: JSON.stringify(request),
++  });
++
++  const responseBody = await response.text();
++  if (!response.ok) {
++    throw new Error(responseBody || `Upload confirm proxy failed with status ${response.status}`);
++  }
++
++  let payload: unknown;
++  try {
++    payload = JSON.parse(responseBody);
++  } catch {
++    throw new Error("Upload confirm proxy returned invalid JSON");
++  }
++  return parseStorageUploadResponse(payload);
++}
++
+ export async function forwardPriceStorageToBackend(
+   request: PriceStorageQuoteRequest,
+   options: BackendQuoteOptions = {},
+@@ -583,11 +664,49 @@ export async function forwardStorageUploadToBackend(
+   };
+ }
+ 
++export async function forwardStorageUploadConfirmToBackend(
++  request: StorageUploadConfirmRequest,
++  options: BackendUploadConfirmOptions = {},
++): Promise<BackendUploadForwardResult> {
++  const fetchImpl = options.fetchImpl ?? fetch;
++  const backendBaseUrl = (options.backendBaseUrl ?? "").trim();
++  const walletSignature = normalizeWalletSignature(options.walletSignature);
++
++  if (!backendBaseUrl) {
++    throw new Error("MNEMOSPARK_BACKEND_API_BASE_URL is not configured");
++  }
++  if (!walletSignature) {
++    throw new Error(
++      "Wallet required for storage endpoints: wallet key must be present to sign requests.",
++    );
++  }
++
++  const targetUrl = `${normalizeBaseUrl(backendBaseUrl)}/storage/upload/confirm`;
++  const response = await fetchImpl(targetUrl, {
++    method: "POST",
++    headers: {
++      "Content-Type": "application/json",
++      "X-Wallet-Signature": walletSignature,
++    },
++    body: JSON.stringify(request),
++  });
++
++  return {
++    status: response.status,
++    bodyText: await response.text(),
++    contentType: response.headers.get("content-type") ?? "application/json",
++    paymentRequired: normalizePaymentRequired(response.headers),
++    paymentResponse: normalizePaymentResponse(response.headers),
++  };
++}
++
+ export type {
+   BackendQuoteForwardResult,
+   BackendQuoteOptions,
+   BackendUploadForwardResult,
+   BackendUploadOptions,
++  BackendUploadConfirmOptions,
+   ProxyQuoteOptions,
+   ProxyUploadOptions,
++  ProxyUploadConfirmOptions,
+ };
+diff --git a/src/proxy.ts b/src/proxy.ts
+index 99d2da0..a81e827 100644
+--- a/src/proxy.ts
++++ b/src/proxy.ts
+@@ -14,8 +14,11 @@ import { createWalletSignatureHeaderValue } from "./mnemospark-request-sign.js";
+ import {
+   PRICE_STORAGE_PROXY_PATH,
+   UPLOAD_PROXY_PATH,
++  UPLOAD_CONFIRM_PROXY_PATH,
++  forwardStorageUploadConfirmToBackend,
+   forwardPriceStorageToBackend,
+   forwardStorageUploadToBackend,
++  parseStorageUploadConfirmRequest,
+   parsePriceStorageQuoteRequest,
+   parseStorageUploadRequest,
+ } from "./cloud-price-storage.js";
+@@ -449,6 +452,81 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
+       return;
+     }
+ 
++    // Mnemospark backend proxy endpoint for /mnemospark cloud upload confirm command.
++    if (req.method === "POST" && matchesProxyPath(req.url, UPLOAD_CONFIRM_PROXY_PATH)) {
++      try {
++        let payload: unknown;
++        try {
++          payload = await readProxyJsonBody(req);
++        } catch {
++          sendJson(res, 400, {
++            error: "Bad request",
++            message: "Invalid JSON body for /mnemospark cloud upload confirm",
++          });
++          return;
++        }
++
++        const requestPayload = parseStorageUploadConfirmRequest(payload);
++        if (!requestPayload) {
++          sendJson(res, 400, {
++            error: "Bad request",
++            message:
++              "Missing required fields: quote_id, wallet_address, object_key, idempotency_key",
++          });
++          return;
++        }
++
++        if (requestPayload.wallet_address.toLowerCase() !== proxyWalletAddressLower) {
++          sendJson(res, 403, {
++            error: "wallet_proof_invalid",
++            message: "wallet proof invalid",
++          });
++          return;
++        }
++
++        const walletSignature = await createBackendWalletSignature(
++          "POST",
++          "/storage/upload/confirm",
++          requestPayload.wallet_address,
++        );
++        if (!walletSignature) {
++          res.writeHead(400, { "Content-Type": "application/json" });
++          res.end(createWalletRequiredBody());
++          return;
++        }
++
++        const backendResponse = await forwardStorageUploadConfirmToBackend(requestPayload, {
++          backendBaseUrl: MNEMOSPARK_BACKEND_API_BASE_URL,
++          walletSignature,
++        });
++
++        const authFailure = normalizeBackendAuthFailure(
++          backendResponse.status,
++          backendResponse.bodyText,
++        );
++        if (authFailure) {
++          const responseHeaders = createBackendForwardHeaders({
++            contentType: authFailure.contentType,
++            paymentRequired: backendResponse.paymentRequired,
++            paymentResponse: backendResponse.paymentResponse,
++          });
++          res.writeHead(authFailure.status, responseHeaders);
++          res.end(authFailure.bodyText);
++          return;
++        }
++
++        const responseHeaders = createBackendForwardHeaders(backendResponse);
++        res.writeHead(backendResponse.status, responseHeaders);
++        res.end(backendResponse.bodyText);
++      } catch (err) {
++        sendJson(res, 502, {
++          error: "proxy_error",
++          message: `Failed to forward /mnemospark cloud upload confirm: ${err instanceof Error ? err.message : String(err)}`,
++        });
++      }
++      return;
++    }
++
+     // Mnemospark backend proxy endpoint for /mnemospark cloud ls command.
+     if (req.method === "POST" && matchesProxyPath(req.url, STORAGE_LS_PROXY_PATH)) {
+       try {
+-- 
+2.43.0
+
