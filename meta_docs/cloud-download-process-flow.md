@@ -70,7 +70,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
 
 #### Step 1 — Read and Parse Body
 
-- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud download"`.
+- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud download"`.
 - `parseStorageObjectRequest(payload)` validates `wallet_address` and `object_key`. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_key"`.
 
 #### Step 2 — Wallet Match and Signature
@@ -266,11 +266,11 @@ sequenceDiagram
     Note over Proxy: downloadStorageToDisk: fetch(presigned URL) → bytes
     Proxy->>S3: GET presigned URL (proxy fetches object)
     S3-->>Proxy: 200 + body (ciphertext)
-    Note over Proxy: writeFile(outputDir/object_key, bytes)<br/>outputDir = process.cwd()
+    Note over Proxy: writeFile(outputDir/object_key, bytes)<br/>outputDir = MNEMOSPARK_DOWNLOAD_DIR or ~/.openclaw/mnemospark/downloads
     Proxy->>FS: write file
     FS-->>Proxy: OK
     Proxy-->>Client: 200 { success, key, file_path, bytes_written }
-    Client-->>User: "File <object_key> downloaded"
+    Client-->>User: "File <object_key> downloaded to <file_path>"
 ```
 
 ---
@@ -281,9 +281,9 @@ Discrepancies or improvements relative to the **goal** (download the object from
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud download" and "Failed to forward /mnemospark cloud download". Use `/mnemospark-cloud download` for consistency. |
-| 9.2 | Configurable download output directory | **mnemospark** | Medium | The proxy calls `downloadStorageToDisk(requestPayload, backendResponse)` with no third argument, so `outputDir` is `process.cwd()` (gateway’s cwd). The file may end up in an unexpected or non-user-visible directory. Recommend: support a configurable download directory (e.g. `MNEMOSPARK_DOWNLOAD_DIR` or `~/.openclaw/mnemospark/downloads`) and pass it as `outputDir` so the user can find the file. |
-| 9.3 | Show file path in success message | **mnemospark** | Medium | The proxy returns `file_path` in the JSON; the client does not include it in the success message. For "so that the file can be used", the user needs to know where the file is. Recommend: include the returned `file_path` in the client success message (e.g. "File &lt;object_key&gt; downloaded to &lt;file_path&gt;"). |
+| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud download`. |
+| 9.2 | Configurable download output directory | **mnemospark** | Medium | ✅ Implemented. Proxy now resolves output directory from `MNEMOSPARK_DOWNLOAD_DIR`, falling back to `~/.openclaw/mnemospark/downloads`, and passes it into `downloadStorageToDisk(..., { outputDir })`. |
+| 9.3 | Show file path in success message | **mnemospark** | Medium | ✅ Implemented. The client success message now includes the returned local `file_path` ("downloaded to ..."). |
 | 9.4 | Decryption for "file can be used" | **mnemospark / mnemospark-backend** | High | Upload stores **encrypted** content in S3 (client-side AES-256-GCM). The download backend returns a presigned URL to that **ciphertext**; the proxy writes it to disk as-is. So the downloaded file is **encrypted** and not directly usable without decryption. To align with "so that the file can be used" (plain file), either: (a) document that the current flow returns the encrypted object and that decryption is out of scope or the user’s responsibility, or (b) implement decryption (e.g. backend decrypts with KEK and streams plaintext, or client decrypts after download using the same KEK resolution as upload). |
 | 9.5 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On download failure, the handler returns only "Cannot download file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
-| 9.6 | Goal alignment summary | — | Verified | The flow **does** download the object from S3 to the local host (proxy fetches via presigned URL and writes to disk). Gaps for "file can be used" are: (1) user is not told the file path (9.3), (2) output directory is not configurable (9.2), (3) file is encrypted (9.4). |
+| 9.6 | Goal alignment summary | — | Verified | The flow **does** download the object from S3 to the local host (proxy fetches via presigned URL and writes to disk), now with explicit file path messaging and configurable output directory. Remaining gap for "file can be used" is encryption/decryption scope (9.4). |

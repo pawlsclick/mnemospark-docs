@@ -277,7 +277,7 @@ Discrepancies or improvements relative to the **goal** (successful listing of th
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud ls" and "Failed to forward /mnemospark cloud ls". Use `/mnemospark-cloud ls` for consistency with docs and slash-command format. |
+| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud ls`. |
 | 9.2 | Surface backend error detail on ls failure | **mnemospark** | Medium | On proxy/backend failure, the handler catches and returns only "Cannot list storage object" with no backend message. Including the response body (or a short error message) when non-OK would help users distinguish 404 (bucket/object not found) from 403/502. |
-| 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | `services/storage-ls/app.py` has no structured logging. Adding a logger and log events for request (wallet, key), bucket, and 404/500 would improve diagnostics. |
+| 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | ✅ Implemented. `services/storage-ls/app.py` now emits structured logs for request parsing, auth confirmation, success, and 4xx/5xx error paths. |
 | 9.4 | Goal alignment | **mnemospark / mnemospark-backend** | Verified | The flow **does** align with the goal: the user supplies `--wallet-address` and `--object-key`, and the backend returns metadata (key, size_bytes, bucket) for that **one** object in the wallet's S3 bucket via `head_object`. This is a single-object listing, not a full bucket list; no change required for that contract. |

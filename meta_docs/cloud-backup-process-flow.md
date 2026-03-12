@@ -279,7 +279,7 @@ Discrepancies or improvements identified while documenting the backup flow:
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | In `src/cloud-command.ts`, the upload path references the backup command in two error strings: "Run /mnemospark cloud price-storage first." (line 1274) and "Run /mnemospark cloud backup first." (line 1301). For consistency with the documented slash-command format, these should say `/mnemospark-cloud` (e.g. "Run /mnemospark-cloud backup first."). |
+| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | ✅ Implemented. `src/cloud-command.ts` now uses canonical slash-command names in those upload guidance strings (e.g. "Run /mnemospark-cloud backup first."). |
 | 9.2 | Optional: Log backup success/failure | **mnemospark** | Low | The backup handler does not log. Adding an optional debug or info log when a backup succeeds (objectId, path) or fails (reason) would align with other flows and help support. Not required for correctness. |
 | 9.3 | Backup object.log row format and parsing | **mnemospark** | Low | Backup appends a three-column row `objectId,objectIdHash,objectSizeGb` with no timestamp. Downstream parsers (e.g. for price-storage or upload) that read object.log must be able to distinguish backup rows from price-storage and upload rows (which use different column layouts). If the format is ever extended (e.g. add a type prefix or timestamp), ensure all readers are updated. No change required if the current contract is intentional and stable. |
 
