@@ -86,7 +86,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
 #### Step 1 — Read and Parse Body
 
-- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark cloud price-storage"` (message uses space form; see Recommended Code Changes).
+- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud price-storage"`.
 - `parsePriceStorageQuoteRequest(payload)` validates required fields. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_id, object_id_hash, gb, provider, region"`.
 
 #### Step 2 — Wallet Signature (Optional)
@@ -99,13 +99,13 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
   - **URL**: `POST {MNEMOSPARK_BACKEND_API_BASE_URL}/price-storage`.
   - **Headers**: `Content-Type: application/json`, and `X-Wallet-Signature` if present.
   - **Body**: Same JSON as received from the client.
-- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark cloud price-storage: ...".
+- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark-cloud price-storage: ...".
 
 #### Step 4 — Relay Response
 
 - Proxy forwards the backend's status code, body, and payment-related headers (e.g. `PAYMENT-REQUIRED`, `x-payment-required`) to the client. No body transformation.
 - If `normalizeBackendAuthFailure()` detects an auth failure (401/403), proxy sends that status and body. For price-storage, wallet is optional so auth failure is less common.
-- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark cloud price-storage: <error>"`.
+- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark-cloud price-storage: <error>"`.
 
 ---
 
@@ -307,6 +307,7 @@ Discrepancies or improvements relative to the **goal** (successful quote for S3 
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud price-storage" and "Failed to forward /mnemospark cloud price-storage". For consistency with docs and slash-command format, use `/mnemospark-cloud price-storage`. Same for other commands in proxy and for upload error messages in cloud-command.ts that reference "Run /mnemospark cloud price-storage first." |
-| 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | `services/price-storage/app.py` has no structured logging (only a `print` when authorizer wallet is present). Adding a logger and log events for request parsed, storage_cost, transfer_cost, quote_id, and errors would align with storage-upload and improve diagnostics. |
-| 9.3 | Goal alignment | **mnemospark-backend** | Verified | The flow aligns with the goal: backend uses **AWS Pricing API** (GetProducts) with `--gb`, `--provider`, and `--region` to compute S3 storage cost and outbound data transfer cost (`PRICE_STORAGE_TRANSFER_DIRECTION: out`), applies `MIN_PRE_MARKUP_SUBTOTAL` floor and markup, then returns a single `storage_price`. No change required for goal alignment. |
+| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | ✅ Implemented. Proxy/client messaging now uses the canonical slash-command format (`/mnemospark-cloud ...`) including price-storage and upload guidance text. |
+| 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | ✅ Implemented. `services/price-storage/app.py` now emits structured logs for request parsing, computed costs/markup, quote write, and bad-request/internal-error paths. |
+| 9.3 | BCM integration test / key validation | **mnemospark-backend** | Medium | Per mnemospark-backend AGENTS.md, the integration test `test_real_bcm_estimate_or_skip_when_no_credentials` (e.g. in estimate-storage or related tests) can fail with BCM `ValidationException` (e.g. key format `[a-zA-Z0-9]*`). If any BCM usage key (in estimate-storage or estimate-transfer) uses hyphens or other invalid characters, fix the key to satisfy BCM so real deployments and integration tests succeed. Current estimate-storage uses `s3stor01` and estimate-transfer uses `dtxfer01`; if other code paths or tests use different keys, ensure they are valid. |
+| 9.4 | Goal alignment | **mnemospark-backend** | Verified | The current flow **does** align with the goal: backend uses `--gb`, `--provider`, and `--region` to compute S3 storage cost (estimate-storage) and outbound data transfer cost (estimate-transfer with `PRICE_STORAGE_TRANSFER_DIRECTION: out`), then applies markup and returns a single `storage_price`. No change required for goal alignment; 9.2 and 9.3 improve robustness and observability. |
