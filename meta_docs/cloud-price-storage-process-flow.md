@@ -124,31 +124,35 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
 - `_extract_authorizer_wallet(event)` reads wallet from API Gateway authorizer context. For `/price-storage`, the wallet authorizer is configured as **optional**; if present, the handler logs it (see Logging). No enforcement that request `wallet_address` matches authorizer wallet for this route.
 
-#### Step 3 — S3 Storage Cost
+#### Step 3 — S3 Storage Cost (AWS Pricing API)
 
-- `estimate_storage_cost(gb=request["gb"], region=request["region"], rate_type=rate_type)` (line 201):
-  - Loads the **estimate-storage** service module (`services/estimate-storage/app.py`) and calls `estimate_s3_storage_cost(storage_gb_month=gb, region=region, rate_type=rate_type)`.
-  - That function uses **AWS BCM Pricing Calculator** (`bcm-pricing-calculator`): creates a workload estimate, adds S3 usage (e.g. `TimedStorage-ByteHrs`, key `s3stor01`), polls until status `VALID`, returns `totalCost`.
-- Returns a float (storage cost in the BCM currency, typically USD).
+- `estimate_storage_cost(gb=request["gb"], region=request["region"], rate_type=rate_type)` in `services/price-storage/app.py`:
+  - Uses the **AWS Price List Query API** (`boto3.client("pricing")`) in region `PRICE_STORAGE_PRICING_API_REGION` (default `us-east-1`).
+  - Calls `pricing.get_products(ServiceCode="AmazonS3", Filters=...)` with `regionCode` and `locationType`, paginating with `NextToken`.
+  - Parses each product JSON from `PriceList`; filters to S3 Standard storage via `_is_s3_standard_storage_product` (productFamily=storage, usagetype contains `TimedStorage-ByteHrs`, excludes Glacier/One Zone/etc.).
+  - Computes tiered cost with `_pick_lowest_tiered_cost` (on-demand GB dimensions, `_calculate_tiered_cost` for usage_gb).
+- Returns a float (storage cost in USD).
 
-#### Step 4 — Data Transfer Cost (Outbound)
+#### Step 4 — Data Transfer Cost (Outbound, AWS Pricing API)
 
-- `estimate_transfer_cost(gb=request["gb"], region=request["region"], direction=direction, rate_type=rate_type)` (line 209):
-  - Loads the **estimate-transfer** service module (`services/estimate-transfer/app.py`) and calls `estimate_data_transfer_cost(data_gb=gb, direction=direction, region=region, rate_type=rate_type)`.
+- `estimate_transfer_cost(gb=request["gb"], region=request["region"], direction=direction, rate_type=rate_type)` in the same `app.py`:
   - **Direction** is from env `PRICE_STORAGE_TRANSFER_DIRECTION` (default **`out`** in `template.yaml`), so the quote includes **outbound** data transfer cost.
-  - Transfer module uses BCM Pricing Calculator with EC2 data transfer usage type (e.g. `DataTransfer-Out-Bytes` for outbound).
-- Returns a float (transfer cost).
+  - Builds filters via `_build_data_transfer_primary_filters(region)` (productFamily=Data Transfer, fromLocation or regionCode, transferType=AWS Outbound).
+  - Calls `pricing.get_products(ServiceCode="AmazonS3", Filters=...)`, filters to outbound data transfer via `_is_data_transfer_product` (usagetype `DataTransfer-Out-Bytes`), excludes CloudFront.
+  - Uses `_pick_lowest_tiered_cost` for tiered USD/GB pricing.
+- Returns a float (transfer cost in USD). For direction `in`, returns 0.
 
 #### Step 5 — Combined Price and Markup
 
-- `storage_price = round((storage_cost + transfer_cost) * (1 + markup_multiplier), 2)` (line 313).
-- `markup_multiplier` from env `PRICE_STORAGE_MARKUP_PERCENT` (or `PRICE_MARKUP_PERCENT`), default `0`. So the quote is **S3 storage + outbound transfer**, optionally marked up.
+- `pre_markup_subtotal = max(storage_cost + transfer_cost, MIN_PRE_MARKUP_SUBTOTAL)` (default floor 2.0).
+- `storage_price = round(pre_markup_subtotal * (1 + markup_multiplier), 2)`.
+- `markup_multiplier` from env `PRICE_STORAGE_MARKUP_PERCENT` (default 20% → 0.20 in code constant `QUOTE_MARKUP_MULTIPLIER`). The quote is **S3 storage + outbound transfer**, floored then marked up.
 
 #### Step 6 — Persist Quote and Respond
 
 - `_build_quote_response(request, storage_price)` builds the response object: `timestamp`, `quote_id` (UUID), `storage_price`, `addr`, `object_id`, `object_id_hash`, `object_size_gb`, `provider`, `location`.
 - `write_quote(...)` writes the quote to the **DynamoDB quotes table** (`QUOTES_TABLE_NAME`), with TTL from `QUOTE_TTL_SECONDS` (default 3600). Item includes `storage_cost`, `transfer_cost`, `markup_multiplier` for auditing.
-- Returns **200** with the quote JSON. On DynamoDB or BCM errors, handler returns **500** with an error body.
+- Returns **200** with the quote JSON. On DynamoDB or AWS Pricing API errors (or missing price tiers), handler returns **500** with an error body.
 
 ---
 
@@ -172,10 +176,8 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 | File | Role |
 |------|------|
 | `services/price_storage_entry.py` | Lambda entry; loads `price-storage/app.py`. |
-| `services/price-storage/app.py` | Main handler: `parse_input`, `estimate_storage_cost`, `estimate_transfer_cost`, `storage_price = (storage_cost + transfer_cost) * (1 + markup)`, `write_quote`, response. |
-| `services/estimate-storage/app.py` | `estimate_s3_storage_cost()`: BCM Pricing Calculator, S3 storage (e.g. `TimedStorage-ByteHrs`, key `s3stor01`). |
-| `services/estimate-transfer/app.py` | `estimate_data_transfer_cost()`: BCM Pricing Calculator, data transfer (direction in/out; price-storage uses **out**). |
-| `template.yaml` | `PriceStorageFunction`, `POST /price-storage`, `PriceStorageRequest` model, env: `QUOTES_TABLE_NAME`, `QUOTE_TTL_SECONDS`, `PRICE_STORAGE_MARKUP_PERCENT`, `PRICE_STORAGE_TRANSFER_DIRECTION: out`, `PRICE_STORAGE_RATE_TYPE`. |
+| `services/price-storage/app.py` | Self-contained handler: `parse_input`; **AWS Price List API** (`boto3.client("pricing")`, `get_products`) for S3 storage and data transfer; `estimate_storage_cost` / `estimate_transfer_cost` (in-app); `pre_markup_subtotal` + markup; `write_quote` (DynamoDB); response. No BCM or separate estimate-storage/estimate-transfer services. |
+| `template.yaml` | `PriceStorageFunction`, `POST /price-storage`, `PriceStorageRequest` model, env: `QUOTES_TABLE_NAME`, `QUOTE_TTL_SECONDS`, `PRICE_STORAGE_MARKUP_PERCENT`, `PRICE_STORAGE_TRANSFER_DIRECTION: out`, `PRICE_STORAGE_RATE_TYPE`, `PRICE_STORAGE_PRICING_API_REGION` (optional). |
 | `services/wallet-authorizer/app.py` | Authorizer; `/price-storage` is **wallet optional**. |
 
 ### Local Filesystem (user machine)
@@ -198,8 +200,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
 ### Backend (mnemospark-backend)
 
-- **price-storage Lambda**: If authorizer context is present, `print(json.dumps({...}))` with wallet info (line 289). No structured logging (e.g. no `logging.getLogger`) for request parsed, storage_cost, transfer_cost, or quote_id. Failures return 400/500 body but are not necessarily logged with a standard event shape.
-- **estimate-storage / estimate-transfer**: Used as libraries by price-storage; their Lambda handlers are not invoked for price-storage. BCM calls and errors surface as exceptions and result in 500 from price-storage.
+- **price-storage Lambda**: If authorizer context is present, `print(json.dumps({...}))` with wallet info (in `lambda_handler`). No structured logging (e.g. no `logging.getLogger`) for request parsed, storage_cost, transfer_cost, or quote_id. Failures return 400/500 body but are not necessarily logged with a standard event shape. AWS Pricing API and DynamoDB errors surface as exceptions and result in 500.
 - **CloudWatch**: Lambda logs (stdout/print) go to the function’s log group (`PriceStorageFunctionLogGroup` in template).
 
 ---
@@ -246,7 +247,7 @@ Two lines:
 | Status | Condition |
 |--------|-----------|
 | 400 | Bad request: e.g. `gb` missing or ≤ 0, `provider` not `aws`, invalid body. |
-| 500 | DynamoDB error, BCM Pricing Calculator error (e.g. estimate invalid or timeout), or unhandled exception. |
+| 500 | DynamoDB error, AWS Pricing API error (e.g. no matching price tier for region/usage), or unhandled exception. |
 
 ---
 
@@ -268,9 +269,7 @@ sequenceDiagram
     participant APIGW as API Gateway
     participant Auth as WalletAuthorizer<br/>(optional)
     participant PriceStorage as PriceStorage<br/>(Lambda)
-    participant EstimateStorage as estimate-storage
-    participant EstimateTransfer as estimate-transfer
-    participant BCM as BCM Pricing Calculator
+    participant Pricing as AWS Pricing API<br/>(GetProducts)
     participant DDB as DynamoDB (quotes)
 
     User->>Client: /mnemospark-cloud price-storage --wallet-address ... --object-id ... --object-id-hash ... --gb ... --provider aws --region ...
@@ -283,15 +282,13 @@ sequenceDiagram
     Auth-->>APIGW: Allow
     APIGW->>PriceStorage: Invoke Lambda
     Note over PriceStorage: parse_input, get rate_type, direction, markup
-    PriceStorage->>EstimateStorage: estimate_s3_storage_cost(gb, region, rate_type)
-    EstimateStorage->>BCM: create_workload_estimate, batch_create_usage (S3)
-    BCM-->>EstimateStorage: totalCost (storage)
-    EstimateStorage-->>PriceStorage: storage_cost
-    PriceStorage->>EstimateTransfer: estimate_data_transfer_cost(gb, region, direction=out, rate_type)
-    EstimateTransfer->>BCM: create_workload_estimate, batch_create_usage (EC2 DataTransfer-Out)
-    BCM-->>EstimateTransfer: totalCost (transfer)
-    EstimateTransfer-->>PriceStorage: transfer_cost
-    Note over PriceStorage: storage_price = (storage_cost + transfer_cost) * (1 + markup)
+    PriceStorage->>Pricing: get_products(AmazonS3, region) — S3 storage
+    Pricing-->>PriceStorage: PriceList (S3 Standard, TimedStorage-ByteHrs)
+    Note over PriceStorage: estimate_storage_cost → tiered cost
+    PriceStorage->>Pricing: get_products(AmazonS3, Data Transfer Out)
+    Pricing-->>PriceStorage: PriceList (DataTransfer-Out-Bytes)
+    Note over PriceStorage: estimate_transfer_cost → tiered cost
+    Note over PriceStorage: pre_markup_subtotal = max(storage+transfer, 2.0); storage_price = round(subtotal * (1+markup), 2)
     PriceStorage->>DDB: put_item (quote, TTL)
     DDB-->>PriceStorage: OK
     PriceStorage-->>APIGW: 200 { timestamp, quote_id, storage_price, addr, object_id, ... }
@@ -312,5 +309,4 @@ Discrepancies or improvements relative to the **goal** (successful quote for S3 
 |---|--------|------|----------|-------------|
 | 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud price-storage" and "Failed to forward /mnemospark cloud price-storage". For consistency with docs and slash-command format, use `/mnemospark-cloud price-storage`. Same for other commands in proxy and for upload error messages in cloud-command.ts that reference "Run /mnemospark cloud price-storage first." |
 | 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | `services/price-storage/app.py` has no structured logging (only a `print` when authorizer wallet is present). Adding a logger and log events for request parsed, storage_cost, transfer_cost, quote_id, and errors would align with storage-upload and improve diagnostics. |
-| 9.3 | BCM integration test / key validation | **mnemospark-backend** | Medium | Per mnemospark-backend AGENTS.md, the integration test `test_real_bcm_estimate_or_skip_when_no_credentials` (e.g. in estimate-storage or related tests) can fail with BCM `ValidationException` (e.g. key format `[a-zA-Z0-9]*`). If any BCM usage key (in estimate-storage or estimate-transfer) uses hyphens or other invalid characters, fix the key to satisfy BCM so real deployments and integration tests succeed. Current estimate-storage uses `s3stor01` and estimate-transfer uses `dtxfer01`; if other code paths or tests use different keys, ensure they are valid. |
-| 9.4 | Goal alignment | **mnemospark-backend** | Verified | The current flow **does** align with the goal: backend uses `--gb`, `--provider`, and `--region` to compute S3 storage cost (estimate-storage) and outbound data transfer cost (estimate-transfer with `PRICE_STORAGE_TRANSFER_DIRECTION: out`), then applies markup and returns a single `storage_price`. No change required for goal alignment; 9.2 and 9.3 improve robustness and observability. |
+| 9.3 | Goal alignment | **mnemospark-backend** | Verified | The flow aligns with the goal: backend uses **AWS Pricing API** (GetProducts) with `--gb`, `--provider`, and `--region` to compute S3 storage cost and outbound data transfer cost (`PRICE_STORAGE_TRANSFER_DIRECTION: out`), applies `MIN_PRE_MARKUP_SUBTOTAL` floor and markup, then returns a single `storage_price`. No change required for goal alignment. |
