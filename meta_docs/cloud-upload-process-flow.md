@@ -706,22 +706,19 @@ The following items were identified after the original five fixes (8.1–8.5). T
 
 | # | Issue | Severity | Status | Notes |
 |---|---|---|---|---|
-| 9.1 | Client Does Not Handle 207 (S3 Failure After Payment) | High | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Returns 207 with `upload_failed: true` and `trans_id`; idempotency marked `retryable` so retries skip payment. **Client (mnemospark):** fix-06 adds auto-retry in `requestStorageUploadViaProxy()` and clear error with `trans_id` when retries are exhausted. |
-| 9.2 | Presigned Upload Has No Backend Confirmation Step | Medium | **RESOLVED (backend)** | **Backend (mnemospark-backend):** Two-phase presigned flow implemented. Presigned uploads mark idempotency `pending_confirmation`, return `confirmation_required: true`, and defer transaction log and quote deletion. `POST /storage/upload/confirm` (StorageUploadConfirmFunction) verifies S3 object via `head_object`, then writes transaction log, deletes quote, and marks idempotency `completed`. **Client (mnemospark):** fix-08 adds `confirmPresignedUploadViaProxy()` and proxy route for `/mnemospark/upload/confirm`; upload handler calls confirm after presigned S3 PUT when `confirmation_required` is true. |
+| 9.1 | Client Does Not Handle 207 (S3 Failure After Payment) | High | **RESOLVED (backend + client)** | **Backend (mnemospark-backend):** Returns 207 with `upload_failed: true` and `trans_id`; idempotency marked `retryable` so retries skip payment. **Client (mnemospark):** handles retryable 207 in `requestStorageUploadViaProxy()` with retries and clear `trans_id` error when retries are exhausted. |
+| 9.2 | Presigned Upload Has No Backend Confirmation Step | Medium | **RESOLVED (backend + client)** | **Backend (mnemospark-backend):** Two-phase presigned flow implemented. Presigned uploads mark idempotency `pending_confirmation`, return `confirmation_required: true`, and defer transaction log and quote deletion. `POST /storage/upload/confirm` verifies S3 object, writes transaction log, deletes quote, and marks idempotency `completed`. **Client (mnemospark):** now calls confirm after presigned S3 PUT when `confirmation_required` is true, and surfaces actionable errors if confirmation fails (including `trans_id` and `idempotency_key`). |
 | 9.3 | Client x402 Retry Sends Full Body to Proxy Again | Low | **NOT IMPLEMENTED** | When the x402 wrapper retries after 402, it re-sends the full request body. For presigned mode the body is small; impact is negligible. No fix required at this time. Note for future consideration. |
 
 ---
 
 ## 10. Remaining Blockers to Successful Payment and S3 Upload
 
-With 9.1 and 9.2 implemented **in mnemospark-backend**, the backend supports:
+With 9.1 and 9.2 implemented **across backend and client**, the system supports:
 
 - **Inline:** 207 on S3 failure after payment, retryable idempotency, and full success path.
 - **Presigned:** Two-phase flow with `confirmation_required` and `POST /storage/upload/confirm`.
 
-For **end-to-end success** (payment + file in S3):
+For **end-to-end success** (payment + file in S3), no additional backend or client blockers are currently identified for inline and presigned paths.
 
-- **Inline:** The client (mnemospark) must handle 207 with auto-retry (fix-06). If the client has not been updated, a 207 response still causes `parseStorageUploadResponse()` to throw and the user sees a generic error; the backend is ready for retries.
-- **Presigned:** The client (mnemospark) must call the confirm endpoint after the presigned S3 PUT (fix-08). If the client has not been updated, the transaction log is never written and the upload is not finalized until/unless the client is updated to call confirm.
-
-**No additional backend fixes are required** for the stated goal. Any remaining gaps are client-side (fix-06 and fix-08 in mnemospark) if those have not yet been implemented.
+**Remaining caution:** item 9.3 (x402 retry body resend) remains intentionally not implemented due low impact.

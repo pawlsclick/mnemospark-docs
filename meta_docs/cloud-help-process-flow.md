@@ -225,7 +225,7 @@ Discrepancies or improvements identified while documenting the help flow:
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Unify slash-command string in proxy error messages | **mnemospark** | Low | In `src/proxy.ts`, error messages and comments still use the space form `"/mnemospark cloud ..."` (e.g. "Invalid JSON body for /mnemospark cloud price-storage", "Failed to forward /mnemospark cloud upload"). For consistency with the documented slash-command format, update these to `"/mnemospark-cloud ..."` so that user-facing and log messages match the canonical command names. |
+| 9.1 | Unify slash-command string in proxy error messages | **mnemospark** | Low | ✅ Implemented. Proxy messages now consistently use the canonical slash-command form (`/mnemospark-cloud ...`). |
 | 9.2 | Optional: Log help/unknown at debug level | **mnemospark** | Low | The help handler does not log when help or unknown is requested. If the plugin API exposes a logger in the command context, adding a single debug log (e.g. "mnemospark-cloud help requested" / "unknown subcommand") would align with other commands that log and aid support. Optional; not required for correctness. |
 | 9.3 | Optional: UX for unknown subcommand | **mnemospark** | Low | When `parsed.mode === "unknown"`, the handler returns the full help text with `isError: true`. Some UIs may show the whole block in red. Alternatives: (a) return a short error line plus the same help text with `isError: false` for the help part, or (b) keep current behavior and document that unknown subcommand shows help in error style. No change required for backend; client-only UX choice. |
 
