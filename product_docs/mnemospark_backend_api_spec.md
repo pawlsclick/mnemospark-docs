@@ -6,6 +6,18 @@
 
 This document defines the **mnemospark-backend** REST API contract: one internet-facing API (API Gateway) with path-based routing to Lambda functions. See [mnemospark_full_workflow.md](./mnemospark_full_workflow.md) for workflow context and [mnemospark_PRD.md](./mnemospark_PRD.md) for requirements.
 
+### Backend API reference (OpenAPI and per-endpoint docs)
+
+- **OpenAPI 3.2.0 spec:** In the **mnemospark-backend** repo, see [`docs/openapi.yaml`](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/openapi.yaml) for the full machine-readable specification (request/response schemas, security, and error contracts).
+- **Per-endpoint docs:** In the same repo under `docs/`, each public endpoint has a dedicated Markdown file following a consistent pattern (auth, request shape, response examples, notes):
+  - [price-storage.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/price-storage.md) — `POST /price-storage`
+  - [payment-settle.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/payment-settle.md) — `POST /payment/settle`
+  - [storage-upload.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/storage-upload.md) — `POST /storage/upload`
+  - [storage-upload-confirm.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/storage-upload-confirm.md) — `POST /storage/upload/confirm`
+  - [storage-ls.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/storage-ls.md) — `GET,POST /storage/ls`
+  - [storage-download.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/storage-download.md) — `GET,POST /storage/download`
+  - [storage-delete.md](https://github.com/pawlsclick/mnemospark-backend/blob/main/docs/storage-delete.md) — `POST,DELETE /storage/delete`
+
 ---
 
 ## 1. Base URL and authentication
