@@ -2,8 +2,8 @@
 
 **ID:** cursor-dev-36  
 **Repo:** mnemospark-docs
+**Repo:** mnemospark-backend
 
-**Workspace for Agent:** Work only in **this repo** (the repo you were started in). This repo is mnemospark-docs. It contains meta docs, product docs, and all cursor-dev specifications and backend API documentation. Do **not** clone, or require access to any other repository; all code and references are in this file References: see below.
 
 **AWS:** When implementing or changing AWS services or resources (e.g. AWS CLI, CloudFormation/SAM templates, Lambda, API Gateway, DynamoDB), follow [AWS Best Practices](https://docs.aws.amazon.com/). The **AWS MCP Server** tool is available in this environment and should be used when working on AWS-based services and resources, but this task is documentation-only and should not modify live infrastructure.
 
@@ -13,7 +13,7 @@ Refine and finalize the **OpenAPI 3.2.0 specification** and add per-endpoint doc
 
 In more detail:
 
-- OpenAPI spec (`mnemospark-backend/docs/openapi.yaml` in the backend repo, but edited here by reference):
+- OpenAPI spec (`mnemospark-backend/docs/openapi.yaml` in the backend repo):
   - Update the existing skeleton from cursor-dev-29 to fully describe:
     - `POST /price-storage`
     - `POST /payment/settle`
@@ -71,6 +71,7 @@ Depends on:
 - `dev_docs/features_cursor_dev/cursor-dev-33-backend-storage-upload-require-payment-record.md`.
 - `dev_docs/features_cursor_dev/cursor-dev-34-backend-logging-and-housekeeping-alignment.md`.
 - `dev_docs/features_cursor_dev/cursor-dev-35-backend-iam-tightening-and-new-resources.md`.
+- `https://cursor.com/docs/cloud-agent/api/endpoints` (Cursor Cloud-style pattern pattern for API documentation)
 
 ## Agent
 
@@ -85,6 +86,6 @@ Depends on:
 
 ## Task string (optional)
 
-Work only in the `mnemospark-docs` repo, using the mnemospark-backend repo as a read-only reference. Finalize the mnemospark-backend OpenAPI 3.2.0 spec and per-endpoint documentation so they accurately reflect the behavior of `/price-storage`, `/payment/settle`, and all `/storage/*` endpoints, including wallet proof auth, payment requirements, idempotency, and error contracts. Validate the spec, ensure each endpoint has a dedicated Markdown doc in the backend repo, and add product-level links in `mnemospark-docs`. Acceptance: [ ] spec validates, [ ] all endpoints documented, [ ] docs clearly describe wallet proof and payment flows.
+Finalize the mnemospark-backend OpenAPI 3.2.0 spec and per-endpoint documentation so they accurately reflect the behavior of `/price-storage`, `/payment/settle`, and all `/storage/*` endpoints, including wallet proof auth, payment requirements, idempotency, and error contracts. Validate the spec, ensure each endpoint has a dedicated Markdown doc in the backend repo, and add product-level links in `mnemospark-docs`. Acceptance: [ ] spec validates, [ ] all endpoints documented, [ ] docs clearly describe wallet proof and payment flows.
 
 
