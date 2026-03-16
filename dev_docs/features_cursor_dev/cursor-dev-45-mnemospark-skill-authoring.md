@@ -7,7 +7,7 @@
 
 ## Scope
 
-Depends on **cursor-dev-44**.
+Depends on **cursor-dev-44** and must incorporate the proxy JSONL observability baseline from **cursor-dev-43** (`proxy-events.jsonl` correlation + terminal event semantics).
 
 Create a formal mnemospark skill specification so the main OpenClaw agent can reliably run mnemospark commands and understand state/log files, with an installable skill package that ships with the mnemospark plugin.
 
@@ -17,7 +17,7 @@ Deliverables:
   - include explicit `--name` / `--latest` / `--at` usage and ambiguity handling rules from cursor-dev-42
   - required local file paths
   - SQLite schema references and lookup patterns (including `friendly_names` Option 2 table added by cursor-dev-42)
-  - JSONL event stream references and triage workflows (`events.jsonl`, `manifest.jsonl`, upcoming `proxy-events.jsonl`)
+  - JSONL event stream references and triage workflows (`events.jsonl`, `manifest.jsonl`, `proxy-events.jsonl`)
   - escalation/rollback behaviors
 - Draft SKILL.md-style structure aligned to OpenClaw creating-skills guidance.
 - Example prompts/task strings for main agent to invoke mnemospark agent reliably.
