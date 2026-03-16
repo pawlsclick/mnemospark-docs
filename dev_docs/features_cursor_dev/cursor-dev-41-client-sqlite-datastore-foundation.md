@@ -13,10 +13,10 @@ Implement a SQLite-based client datastore to replace ad-hoc file state for opera
 
 Deliverables:
 - New client DB path (default): `~/.openclaw/mnemospark/state.db`
-- Migration bootstrap that can read existing `object.log` and `crontab.txt` and seed normalized tables.
 - Schema v1 with explicit migrations table.
 - Read/write abstraction module used by backup/quote/upload/ls/download/delete and cron registration paths.
 - Feature flag or safe fallback path if DB unavailable.
+ - **Out of scope for this run:** any legacy migration or import from existing `object.log` or `crontab.txt` files. Those will be handled in a later cursor-dev spec.
 
 Schema v1 minimum:
 - `objects` (object_id, object_key, wallet_address, quote_id, provider, bucket_name, region, sha256, status, created_at, updated_at)
@@ -39,14 +39,13 @@ Schema v1 minimum:
 - **Acceptance criteria (checkboxes):**
   - [ ] SQLite DB initializes on demand at `~/.openclaw/mnemospark/state.db`.
   - [ ] Schema v1 + migration tracking implemented.
-  - [ ] Legacy state import path exists for `object.log` and `crontab.txt`.
   - [ ] Existing command outcomes still work with no regressions.
-  - [ ] Unit tests cover initialization, insert/update/query, and migration bootstrap.
+  - [ ] Unit tests cover initialization, insert/update/query, and schema migration tracking.
   - [ ] Branch from `main`, open PR (no direct commit to `main`).
 
 ## Task string (optional)
 
-Work only in mnemospark repo. Implement SQLite datastore foundation with migration-safe schema and legacy import from current logs. Preserve existing behavior, add tests, and open PR from a new branch.
+Work only in mnemospark repo. Implement SQLite datastore foundation with migration-safe schema (no legacy import yet). Preserve existing behavior, add tests, and open PR from a new branch.
 
 
 ## Decision constraints

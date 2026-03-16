@@ -7,7 +7,7 @@
 
 ## Scope
 
-Depends on **cursor-dev-41**.
+Depends on **cursor-dev-41** (SQLite schema v1). This run must not change the SQLite schema defined there; it only adds JSONL observability and manifest behavior on top.
 
 Add structured JSONL observability for client-side operations and introduce a friendly-name manifest layer for human backup/restore UX.
 
@@ -20,7 +20,7 @@ Deliverables:
   - `--name` + `--latest|--at` (download/restore resolution)
 - Event schema contract with consistent keys:
   - `ts`, `event_type`, `operation_id`, `wallet_address`, `object_id`, `object_key`, `quote_id`, `status`, `details`.
-- Log rotation policy (size or date) with safe rollover.
+- Log rotation policy (size or date) with safe rollover, following the global JSONL retention decision (see Decision constraints).
 
 ## References
 

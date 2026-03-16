@@ -9,7 +9,7 @@
 
 Depends on **cursor-dev-44**.
 
-Create a formal mnemospark skill specification so the main OpenClaw agent can reliably run mnemospark commands and understand state/log files.
+Create a formal mnemospark skill specification so the main OpenClaw agent can reliably run mnemospark commands and understand state/log files, with an installable skill package that ships with the mnemospark plugin.
 
 Deliverables:
 - Skill authoring docs under `ops/` and/or `dev_docs/` describing:
@@ -20,6 +20,7 @@ Deliverables:
   - escalation/rollback behaviors
 - Draft SKILL.md-style structure aligned to OpenClaw creating-skills guidance.
 - Example prompts/task strings for main agent to invoke mnemospark agent reliably.
+ - Clear description of where the concrete skill package (SKILL metadata + any helper code) will live in the `mnemospark` repo and how the mnemospark build/install flow bundles it so that installing the mnemospark plugin automatically makes the skill available to OpenClaw (no separate install step).
 
 ## References
 
@@ -41,7 +42,7 @@ Deliverables:
 
 ## Task string (optional)
 
-Author a production-ready mnemospark skill spec in mnemospark-docs so the main OpenClaw agent can delegate and monitor mnemospark operations consistently.
+Author a production-ready mnemospark skill spec in mnemospark-docs so the main OpenClaw agent can delegate and monitor mnemospark operations consistently, and describe how the bundled skill package in the `mnemospark` repo is included in the plugin build so it is available to OpenClaw on install.
 
 
 ## Decision constraints
