@@ -49,6 +49,11 @@ Each doc must include:
 Write operator-focused docs for SQLite querying and JSONL stream troubleshooting in mnemospark-docs/ops, aligned to async subagent execution model.
 
 
+## Output produced in this docs repo
+- `ops/mnemospark-sqlite-queries.md`
+- `ops/mnemospark-jsonl-streaming.md`
+- `ops/mnemospark-async-ops-troubleshooting.md`
+
 ## Decision constraints
 - Include a mandatory "Required Tools" section listing: sqlite3, jq, tail, grep, awk, sed, gzip/zcat.
 - Include install-time validation guidance for these tools (auto-install where possible, fail-fast otherwise).
