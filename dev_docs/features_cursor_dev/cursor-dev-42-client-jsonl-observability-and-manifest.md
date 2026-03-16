@@ -18,13 +18,17 @@ This run adds:
 Friendly-name resolution must use **SQLite as source of truth** for query correctness.  
 `manifest.jsonl` is kept as append-only audit/history for observability and troubleshooting.
 
-No SQLite schema change is allowed in this run beyond using cursor-dev-41 tables/fields already present.
+SQLite schema update is required in this run to support reliable friendly-name resolution (Option 2: dedicated `friendly_names` table).
 
 ## Deliverables
 
 - `~/.openclaw/mnemospark/events.jsonl` append-only event stream.
 - `~/.openclaw/mnemospark/manifest.jsonl` append-only friendly-name audit stream.
-- Friendly-name state/query implemented via SQLite (`~/.openclaw/mnemospark/state.db`) using existing cursor-dev-41 schema fields.
+- Friendly-name state/query implemented via SQLite (`~/.openclaw/mnemospark/state.db`) with a dedicated `friendly_names` table.
+- Migration v2 (Option 2 schema) added:
+  - `friendly_names` (`friendly_name_id`, `friendly_name`, `object_id`, `object_key`, `quote_id`, `wallet_address`, `created_at`, `updated_at`, `is_active`)
+  - Required indexes: `idx_friendly_names_name`, `idx_friendly_names_object_id`, `idx_friendly_names_wallet`, `idx_friendly_names_created_at`
+  - Name lookup rules should be deterministic for duplicate names (`--latest` / `--at`).
 - Stable event schema keys:
   - `ts`, `event_type`, `operation_id`, `wallet_address`, `object_id`, `object_key`, `quote_id`, `status`, `details`
 - JSONL rotation/retention:
@@ -71,6 +75,7 @@ Resolution rules:
 - **Acceptance criteria (checkboxes):**
   - [ ] Client emits JSONL events for all core operations.
   - [ ] Friendly-name operations are persisted and queryable via SQLite (source of truth).
+  - [ ] Includes migration v2 for dedicated `friendly_names` table.
   - [ ] `manifest.jsonl` records friendly-name history/audit entries.
   - [ ] Name-to-object resolution supports duplicate handling (`--latest` or `--at`).
   - [ ] `/mnemospark-cloud help` explicitly documents new `--name` command structure.
@@ -88,4 +93,5 @@ Use SQLite as source of truth for name resolution, keep manifest/events JSONL fo
 - Retention policy required: rotate JSONL at 10 MB, keep latest 10 files, gzip rotated files.
 - Friendly names are optional inputs; user-facing output should prefer friendly name when present.
 - Friendly-name query resolution must be SQLite-first (not JSONL parsing).
+- Option 2 schema is required: add and migrate dedicated `friendly_names` table in SQLite.
 - No backend API changes required for `--name`.
