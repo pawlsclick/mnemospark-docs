@@ -47,5 +47,8 @@ Deliverables:
 Author a production-ready mnemospark skill spec in mnemospark-docs so the main OpenClaw agent can delegate and monitor mnemospark operations consistently, and describe how the bundled skill package in the `mnemospark` repo is included in the plugin build so it is available to OpenClaw on install.
 
 
+## Output produced in this docs repo
+- `ops/mnemospark-skill-spec.md`
+
 ## Decision constraints
 - Skill artifacts must live in the `mnemospark` repo and be installable during mnemospark install flow (single-step install).
