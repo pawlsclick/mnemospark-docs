@@ -14,8 +14,9 @@ Create a formal mnemospark skill specification so the main OpenClaw agent can re
 Deliverables:
 - Skill authoring docs under `ops/` and/or `dev_docs/` describing:
   - command catalog (`/mnemospark-cloud`, `/mnemospark-wallet`, async operation status commands)
+  - include explicit `--name` / `--latest` / `--at` usage and ambiguity handling rules from cursor-dev-42
   - required local file paths
-  - SQLite schema references and lookup patterns
+  - SQLite schema references and lookup patterns (including `friendly_names` Option 2 table added by cursor-dev-42)
   - JSONL event stream references and triage workflows
   - escalation/rollback behaviors
 - Draft SKILL.md-style structure aligned to OpenClaw creating-skills guidance.

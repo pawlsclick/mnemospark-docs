@@ -7,7 +7,12 @@
 
 ## Scope
 
-Depends on **cursor-dev-41** (SQLite schema v1).
+Depends on **cursor-dev-41** (merged at `07fe69d7c7ebecb5c850e9e6d773bad7b1f2fb29`).
+
+Baseline from merged 41 that must be preserved:
+- SQLite path: `~/.openclaw/mnemospark/state.db` (lazy init).
+- Existing compatibility behavior with `object.log` / `crontab.txt` must not regress during 42 rollout.
+- Commands should continue graceful operation if SQLite is unavailable (fallback behavior remains intact).
 
 This run adds:
 1. Structured JSONL observability
@@ -27,6 +32,7 @@ SQLite schema update is required in this run to support reliable friendly-name r
 - Friendly-name state/query implemented via SQLite (`~/.openclaw/mnemospark/state.db`) with a dedicated `friendly_names` table.
 - Migration v2 (Option 2 schema) added:
   - `friendly_names` (`friendly_name_id`, `friendly_name`, `object_id`, `object_key`, `quote_id`, `wallet_address`, `created_at`, `updated_at`, `is_active`)
+  - Treat `quote_id` and `object_key` as nullable-friendly in lookup paths to align with merged 41 behavior where quote metadata may be missing during early lifecycle.
   - Required indexes: `idx_friendly_names_name`, `idx_friendly_names_object_id`, `idx_friendly_names_wallet`, `idx_friendly_names_created_at`
   - Name lookup rules should be deterministic for duplicate names (`--latest` / `--at`).
 - Stable event schema keys:

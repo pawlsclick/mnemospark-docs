@@ -10,6 +10,7 @@
 Depends on **cursor-dev-41**, **cursor-dev-42**, **cursor-dev-43**, **cursor-dev-44**, **cursor-dev-45**.
 
 Document practical troubleshooting and observability procedures for operators.
+Include transition-era guidance where SQLite/JSONL is primary but legacy `object.log`/`crontab.txt` compatibility paths may still be encountered.
 
 Required output docs under `ops/`:
 - `ops/mnemospark-sqlite-queries.md`
@@ -35,6 +36,7 @@ Each doc must include:
 - **Acceptance criteria (checkboxes):**
   - [ ] All three ops docs created in `ops/`.
   - [ ] SQLite query examples cover objects/payments/cron_jobs/operations tables.
+- [ ] SQLite query examples include `friendly_names` table (Option 2 from cursor-dev-42) and name-resolution diagnostics.
   - [ ] JSONL examples cover filtering by quote_id/object_id/operation_id.
   - [ ] Async orchestration runbook includes progress, timeout, retry, and stuck-task procedures.
   - [ ] Branch from `main`, open PR.

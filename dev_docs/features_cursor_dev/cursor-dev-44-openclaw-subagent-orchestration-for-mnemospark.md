@@ -7,7 +7,7 @@
 
 ## Scope
 
-Depends on **cursor-dev-41** and **cursor-dev-42**. This run must reuse the existing SQLite schema (especially the `operations` table) and JSONL event model introduced in 42, not introduce parallel tracking structures.
+Depends on **cursor-dev-41** and **cursor-dev-42**. This run must reuse the existing SQLite schema (`operations` plus Option 2 `friendly_names`) and JSONL event model introduced in 42, not introduce parallel tracking structures.
 
 Implement asynchronous mnemospark task execution model so the main OpenClaw agent delegates long-running mnemospark operations to a dedicated mnemospark agent/session and remains responsive.
 
@@ -15,6 +15,7 @@ Deliverables:
 - Task handoff contract from main agent -> mnemospark agent.
 - Async operation tracking in SQLite using the existing `operations` table from cursor-dev-41.
 - Progress + terminal updates emitted to the JSONL streams defined in cursor-dev-42 and user-facing status messages.
+- Reuse existing operation timestamp semantics from merged cursor-dev-41 (single operation lifecycle with clear started/finished transitions, no duplicate parallel trackers).
 - Command behavior for long tasks (`upload`, `download`, potentially `restore`) should return quickly with operation ID and progress model.
 - Failure semantics for cancellation/timeouts/retries.
 
