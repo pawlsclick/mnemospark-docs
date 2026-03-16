@@ -1,0 +1,47 @@
+# Cursor Dev: OpenClaw Subagent Orchestration for mnemospark Long-Running Tasks
+
+**ID:** cursor-dev-44  
+**Repo:** mnemospark
+
+**Workspace for Agent:** Work only in **mnemospark**. This implementation should integrate with OpenClaw subagent tool semantics without changing other repos in this run.
+
+## Scope
+
+Depends on **cursor-dev-41** and **cursor-dev-42**.
+
+Implement asynchronous mnemospark task execution model so the main OpenClaw agent delegates long-running mnemospark operations to a dedicated mnemospark agent/session and remains responsive.
+
+Deliverables:
+- Task handoff contract from main agent -> mnemospark agent.
+- Async operation tracking in SQLite (`operations` table).
+- Progress + terminal updates emitted to JSONL and user-facing status messages.
+- Command behavior for long tasks (`upload`, `download`, potentially `restore`) should return quickly with operation ID and progress model.
+- Failure semantics for cancellation/timeouts/retries.
+
+## References
+
+- OpenClaw subagents docs: https://docs.openclaw.ai/tools/subagents
+- `mnemospark-docs/ops/mnemospark-implementation-order-sqlite-jsonl-subagent-skill.md`
+- `cursor-dev-41`, `cursor-dev-42`
+
+## Agent
+
+- **Install (idempotent):** `npm ci`
+- **Start (if needed):** None.
+- **Secrets:** None beyond existing runtime config.
+- **Acceptance criteria (checkboxes):**
+  - [ ] Main agent can dispatch long mnemospark operations without blocking.
+  - [ ] Operation IDs persist in SQLite and are queryable.
+  - [ ] User gets progress and final outcome updates.
+  - [ ] Retry/cancel outcomes are observable in JSONL + SQLite.
+  - [ ] Tests include long-running mock execution and status transitions.
+  - [ ] Branch from `main`, open PR.
+
+## Task string (optional)
+
+Implement async subagent orchestration flow for mnemospark long operations with SQLite-backed operation tracking and JSONL progress events.
+
+
+## Decision constraints
+- Use OpenClaw `subagent` runtime for async delegation (not ACP).
+- Main agent should return quickly with operation ID and continue user interaction while mnemospark subagent executes.
