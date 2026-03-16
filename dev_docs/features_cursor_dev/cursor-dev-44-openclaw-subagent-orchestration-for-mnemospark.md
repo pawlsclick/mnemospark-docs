@@ -7,7 +7,7 @@
 
 ## Scope
 
-Depends on **cursor-dev-41** and **cursor-dev-42**. This run must reuse the existing SQLite schema (`operations` plus Option 2 `friendly_names`) and JSONL event model introduced in 42, not introduce parallel tracking structures.
+Depends on **cursor-dev-41** and **cursor-dev-42** (merged at `47389d1bac0397cc60ba13018f6f3ebce52f6ac1`). This run must reuse the existing SQLite schema (`operations` plus Option 2 `friendly_names`) and JSONL event model introduced in 42, not introduce parallel tracking structures.
 
 Implement asynchronous mnemospark task execution model so the main OpenClaw agent delegates long-running mnemospark operations to a dedicated mnemospark agent/session and remains responsive.
 

@@ -7,7 +7,7 @@
 
 ## Scope
 
-Depends on **cursor-dev-42** (including Option 2 `friendly_names` migration on top of cursor-dev-41). This run must not introduce new SQLite schema changes; it only adds proxy-side JSONL observability.
+Depends on **cursor-dev-42** merged at `47389d1bac0397cc60ba13018f6f3ebce52f6ac1` (client `events.jsonl` + `manifest.jsonl`, SQLite `friendly_names`, name selectors `--name/--latest/--at`). This run must not introduce new SQLite schema changes; it only adds proxy-side JSONL observability.
 
 Add structured JSONL observability for the mnemospark proxy layer so long-running and retry-prone paths are traceable end-to-end.
 
@@ -21,6 +21,7 @@ Deliverables:
   - storage call start/result
   - retry decisions
   - terminal success/failure
+- Logging must be best-effort and non-blocking: JSONL write/rotation failures must not fail core proxy request handling.
 - Compatibility with client events (`events.jsonl`) for joint troubleshooting.
   - Proxy events must be designed so they can be stitched with client `events.jsonl` using shared IDs (e.g., `operation_id`, `quote_id`, `wallet_address`, `object_id`, `object_key`).
   - Correlation should tolerate nullable identifiers (especially `quote_id`/`object_key`) and still emit usable traces.

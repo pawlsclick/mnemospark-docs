@@ -37,7 +37,8 @@ Each doc must include:
   - [ ] All three ops docs created in `ops/`.
   - [ ] SQLite query examples cover objects/payments/cron_jobs/operations tables.
 - [ ] SQLite query examples include `friendly_names` table (Option 2 from cursor-dev-42) and name-resolution diagnostics.
-  - [ ] JSONL examples cover filtering by quote_id/object_id/operation_id.
+- [ ] JSONL examples cover filtering by quote_id/object_id/operation_id.
+- [ ] JSONL docs explicitly cover both `events.jsonl` and `manifest.jsonl` behavior added in cursor-dev-42 (including best-effort logging and rotation expectations).
   - [ ] Async orchestration runbook includes progress, timeout, retry, and stuck-task procedures.
   - [ ] Branch from `main`, open PR.
 

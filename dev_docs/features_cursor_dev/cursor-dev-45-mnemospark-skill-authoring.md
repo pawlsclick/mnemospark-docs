@@ -17,7 +17,7 @@ Deliverables:
   - include explicit `--name` / `--latest` / `--at` usage and ambiguity handling rules from cursor-dev-42
   - required local file paths
   - SQLite schema references and lookup patterns (including `friendly_names` Option 2 table added by cursor-dev-42)
-  - JSONL event stream references and triage workflows
+  - JSONL event stream references and triage workflows (`events.jsonl`, `manifest.jsonl`, upcoming `proxy-events.jsonl`)
   - escalation/rollback behaviors
 - Draft SKILL.md-style structure aligned to OpenClaw creating-skills guidance.
 - Example prompts/task strings for main agent to invoke mnemospark agent reliably.
