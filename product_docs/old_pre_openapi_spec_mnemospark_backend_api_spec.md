@@ -1,5 +1,6 @@
 # mnemospark-backend API specification
 
+**Out dated DO NOT USE, see: mnemospark-backend/docs/openapi.yaml**
 **Version:** 1.0  
 **Last updated:** February 2026  
 **Audience:** Engineering, integration, API consumers
