@@ -1,8 +1,47 @@
 # Payment authorization header: client build vs backend EIP-712 expectation
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Related cursor-dev IDs:** cursor-dev-30  
+**Repo / component:** mnemospark (client) and mnemospark-backend (payment-settle, storage-upload)
+
 Trace of where the payment header is built in the mnemospark client and what the backend expects for EIP-712 (domain, types, message shape). Use this to debug 402 "Payment authorization header is required" or "EIP-712 signature verification failed".
 
 ---
+
+## Overview
+
+This spec describes how the mnemospark client constructs the payment authorization header using EIP-712 and how the backend verifies it during payment settlement. It also highlights common failure modes when the client and backend disagree on domain data, message fields, or signature encoding.
+
+## Context
+
+At a high level, the flow is:
+
+- Client calls `POST /mnemospark/payment/settle` (or forwards directly to the backend).
+- Backend responds with a 402 and a `payment-required`/`x-payment-required` hint.
+- Client builds and signs an EIP-712 `TransferWithAuthorization` payload.
+- Client retries the same request with the payment header set.
+- Backend decodes, verifies, and settles the payment.
+
+## Diagrams
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Proxy
+    participant Backend
+
+    Client->>Proxy: POST /mnemospark/payment/settle<br/>body: { quote_id, wallet_address }<br/>headers: X-Wallet-Signature
+    Proxy->>Backend: POST /payment/settle<br/>same body & headers
+    Backend-->>Proxy: 402 Payment Required<br/>headers: payment-required / x-payment-required
+    Proxy-->>Client: 402 Payment Required
+    Client->>Client: Parse payment-required, build EIP-712 payload<br/>sign TransferWithAuthorization
+    Client->>Proxy: Retry POST /mnemospark/payment/settle<br/>headers: payment-signature, x-payment
+    Proxy->>Backend: Retry POST /payment/settle<br/>headers: payment-signature, x-payment
+    Backend->>Backend: Decode payment payload<br/>recover signer, validate terms
+    Backend-->>Proxy: 200 OK (payment settled)
+    Proxy-->>Client: 200 OK
+```
 
 ## 1. Where the client builds the payment
 
@@ -195,3 +234,14 @@ Backend 402 **requirements** (`_payment_requirements`) send `accepts: [ { scheme
 | Backend: verify   | mnemospark-backend `services/storage-upload/app.py` (`verify_and_settle_payment`, `_decode_payment_payload`, `_extract_transfer_authorization`, `_recover_authorization_signer`, `TRANSFER_WITH_AUTH_TYPES`, `_payment_requirements`) |
 | Backend: settle   | mnemospark-backend `services/payment-settle/app.py` (parse, quote, call payment_core.verify_and_settle_payment, 402 handling) |
 | Docs              | mnemospark-backend `docs/payment-settle.md`, `docs/openapi.yaml` |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/payment-authorization-eip712-trace.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/payment-authorization-eip712-trace.md`
+- Upload flow: `meta_docs/cloud-upload-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-upload-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

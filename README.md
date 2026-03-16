@@ -22,6 +22,7 @@ This directory holds the main product, workflow, and backend documentation for *
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [infrastructure_design/](./infrastructure_design/) | AWS design for securing the internet-facing backend (API Gateway, WAF, CloudFront, etc.).                                                              |
 | [dev_docs/](./dev_docs/)                           | Development-focused docs: Cursor Cloud Agent feature specs, devops features, fix workflows, templates, and tests.                                      |
+| [meta_docs/](./meta_docs/)                         | Runtime behavior and flow-level specs (cloud commands, wallet proof, payment auth, troubleshooting, identifiers) tied to code milestones.             |
 | [knowledge/](./knowledge/)                         | Reference material: agentic AI best practices, Antfarm notes.                                                                                          |
 | [archive/](./archive/)                             | Superseded and design-phase root-level docs (older product specs, Q&A, encryption options, etc.). See [archive/README.md](./archive/README.md).        |
 

@@ -1,5 +1,10 @@
 # `quote_id` in DynamoDB (mnemospark quotes)
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark-backend)  
+**Repos / components:** mnemospark-backend (price-storage, quotes table)
+
 ## What `quote_id` represents
 
 `quote_id` is the identifier for a **1-hour storage quote** created by `POST /price-storage`.
@@ -44,4 +49,17 @@ Quotes are stored with an `expires_at` field (epoch seconds) computed as:
 - `expires_at = now + QUOTE_TTL_SECONDS`
 
 The table is intended for short-lived quotes (default 1 hour) so old quotes age out automatically.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/quote-id-dynamodb.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/quote-id-dynamodb.md`
+- Price-storage flow: `meta_docs/cloud-price-storage-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-price-storage-process-flow.md`
+- Upload flow: `meta_docs/cloud-upload-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-upload-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`
 

@@ -1,5 +1,10 @@
 # Cloud Price-Storage Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (price-storage, wallet-authorizer)
+
 End-to-end documentation of the `/mnemospark-cloud price-storage` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Obtain a successful quote for **S3 storage costs** and **outbound data transfer costs** based on the file size (`--gb`) requested. The quote is stored in DynamoDB (with TTL) and returned to the user so they can proceed to `/mnemospark-cloud upload` with a valid `quote-id`.
@@ -311,3 +316,14 @@ Discrepancies or improvements relative to the **goal** (successful quote for S3 
 | 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | ✅ Implemented. `services/price-storage/app.py` now emits structured logs for request parsing, computed costs/markup, quote write, and bad-request/internal-error paths. |
 | 9.3 | BCM integration test / key validation | **mnemospark-backend** | Medium | Per mnemospark-backend AGENTS.md, the integration test `test_real_bcm_estimate_or_skip_when_no_credentials` (e.g. in estimate-storage or related tests) can fail with BCM `ValidationException` (e.g. key format `[a-zA-Z0-9]*`). If any BCM usage key (in estimate-storage or estimate-transfer) uses hyphens or other invalid characters, fix the key to satisfy BCM so real deployments and integration tests succeed. Current estimate-storage uses `s3stor01` and estimate-transfer uses `dtxfer01`; if other code paths or tests use different keys, ensure they are valid. |
 | 9.4 | Goal alignment | **mnemospark-backend** | Verified | The current flow **does** align with the goal: backend uses `--gb`, `--provider`, and `--region` to compute S3 storage cost (estimate-storage) and outbound data transfer cost (estimate-transfer with `PRICE_STORAGE_TRANSFER_DIRECTION: out`), then applies markup and returns a single `storage_price`. No change required for goal alignment; 9.2 and 9.3 improve robustness and observability. |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-price-storage-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-price-storage-process-flow.md`
+- Wallet proof spec: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

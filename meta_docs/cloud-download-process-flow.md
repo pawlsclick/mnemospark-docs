@@ -1,5 +1,10 @@
 # Cloud Download Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-download, wallet-authorizer)
+
 End-to-end documentation of the `/mnemospark-cloud download` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Download the object from S3 storage to the local host so that the file can be used. The backend returns a short-lived presigned S3 GET URL; the **proxy** fetches the object from that URL and writes it to disk, then returns the file path and metadata to the client. The client displays success but does not receive or show the file path in the current implementation.
@@ -287,3 +292,14 @@ Discrepancies or improvements relative to the **goal** (download the object from
 | 9.4 | Decryption for "file can be used" | **mnemospark / mnemospark-backend** | High | Upload stores **encrypted** content in S3 (client-side AES-256-GCM). The download backend returns a presigned URL to that **ciphertext**; the proxy writes it to disk as-is. So the downloaded file is **encrypted** and not directly usable without decryption. To align with "so that the file can be used" (plain file), either: (a) document that the current flow returns the encrypted object and that decryption is out of scope or the user’s responsibility, or (b) implement decryption (e.g. backend decrypts with KEK and streams plaintext, or client decrypts after download using the same KEK resolution as upload). |
 | 9.5 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On download failure, the handler returns only "Cannot download file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
 | 9.6 | Goal alignment summary | — | Verified | The flow **does** download the object from S3 to the local host (proxy fetches via presigned URL and writes to disk), now with explicit file path messaging and configurable output directory. Remaining gap for "file can be used" is encryption/decryption scope (9.4). |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-download-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-download-process-flow.md`
+- Wallet proof spec: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

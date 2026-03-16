@@ -1,6 +1,9 @@
 # Wallet proof
 
-mnemospark v0.1.11  
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy) and mnemospark-backend (wallet authorizer, storage/price routes)
 
 The **wallet proof** is a cryptographically signed value that authenticates the client to the mnemospark backend. The client proves it holds the private key for a given wallet address by signing a structured request payload. The backend verifies the signature and can reject requests with invalid or expired proofs.
 
@@ -74,6 +77,26 @@ The backend:
 
 So the proof is used to **authenticate the caller as the holder of that wallet** and to **bind the signature to method and path** (and optionally nonce/timestamp).
 
+## Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Proxy
+    participant Backend
+    participant Authorizer
+
+    Client->>Proxy: Request (method, path, body)
+    Note over Proxy: Build MnemosparkRequest payload<br/>(method, path, walletAddress, nonce, timestamp)
+    Proxy->>Proxy: signTypedData(MnemosparkRequest)<br/>build X-Wallet-Signature envelope
+    Proxy->>Backend: Forward request<br/>X-Wallet-Signature header
+    Backend->>Authorizer: Invoke wallet authorizer
+    Authorizer->>Authorizer: Decode envelope, verify EIP-712<br/>and time/nonce constraints
+    Authorizer-->>Backend: Allow + walletAddress context<br/>or Deny on failure
+    Backend-->>Proxy: Response (2xx/4xx/5xx)
+    Proxy-->>Client: Surface response to user
+```
+
 ### Client-side flows
 
 1. **Plugin / OpenClaw (via proxy)**  
@@ -94,3 +117,20 @@ If the backend responds with 403 and a body that looks like a signature/proof/au
 | **Where created** | `src/mnemospark-request-sign.ts` (`createWalletSignatureHeaderValue`, `createMnemosparkRequestPayload`), using `src/nonce.ts` for the nonce. |
 | **How sent**  | HTTP header `X-Wallet-Signature` with value = base64(JSON.stringify({ payloadB64, signature, address })). |
 | **What it’s for** | Proving to the mnemospark backend that the client controls the given wallet and that the request (method/path) is bound to that proof; backend uses it to authorize storage and pricing operations. |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Price-storage flow: `meta_docs/cloud-price-storage-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-price-storage-process-flow.md`
+- Upload flow: `meta_docs/cloud-upload-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-upload-process-flow.md`
+- Download flow: `meta_docs/cloud-download-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-download-process-flow.md`
+- Delete flow: `meta_docs/cloud-delete-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-delete-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

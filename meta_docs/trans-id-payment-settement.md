@@ -1,5 +1,10 @@
 # `trans_id` (transaction id) in mnemospark
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark-backend)  
+**Repos / components:** mnemospark-backend (storage-upload payment settlement)
+
 ## What `trans_id` represents
 
 `trans_id` is the identifier recorded by the backend for the **USDC payment settlement transaction** associated with a successful `POST /storage/upload`.
@@ -44,3 +49,13 @@ Example (Base tx):
 - **`mock` mode:** **No** (synthetic, BaseScan will not find it)
 - **`onchain` mode:** **Yes** (`trans_id` == Base TxHash)
 
+---
+
+## Spec references
+
+- This doc: `meta_docs/trans-id-payment-settement.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/trans-id-payment-settement.md`
+- Upload flow: `meta_docs/cloud-upload-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-upload-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

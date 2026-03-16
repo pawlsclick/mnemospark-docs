@@ -1,5 +1,10 @@
 # Wallet and Export Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark)  
+**Repos / components:** mnemospark (client)
+
 End-to-end documentation of the `/mnemospark-wallet` and `/mnemospark-wallet export` commands.
 
 **Goal**: Show the user their crypto wallet details (address, balance, key file location) and let them store the key safely via export. Private key and wallet data never leave the client; the proxy and mnemospark backend are **not** involved in these commands.
@@ -245,3 +250,12 @@ These items would align behavior with the goal of “show wallet details and let
 ### mnemospark-backend
 
 - No changes recommended for these commands; the backend is not involved in `/mnemospark-wallet` or `/mnemospark-wallet export`.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/wallet-and-export-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-and-export-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

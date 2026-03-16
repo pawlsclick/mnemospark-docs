@@ -1,5 +1,10 @@
 # Where to check backend logs (requests and responses)
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark-backend)  
+**Repos / components:** mnemospark-backend (API Gateway, Lambda, CloudWatch)
+
 The mnemospark backend is deployed with AWS SAM (API Gateway + Lambda). All request/response and function logs go to **AWS CloudWatch Logs** in the same account and region as the stack.
 
 ## 1. API Gateway access logs (HTTP requests and responses)
@@ -86,3 +91,14 @@ aws logs describe-log-streams \
 ```
 
 Then read a stream with `aws logs get-log-events --log-group-name ... --log-stream-name ...`.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/backend-logs.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/backend-logs.md`
+- Troubleshooting price-storage: `meta_docs/troubleshoot-price-storage-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/troubleshoot-price-storage-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

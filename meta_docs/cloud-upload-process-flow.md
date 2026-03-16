@@ -1,5 +1,10 @@
 # Cloud Upload Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-upload, payment-settle, wallet-authorizer)
+
 End-to-end documentation of the `/mnemospark-cloud upload` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Successful USDC payment and encrypted file storage in S3.
@@ -722,3 +727,20 @@ With 9.1 and 9.2 implemented **across backend and client**, the system supports:
 For **end-to-end success** (payment + file in S3), no additional backend or client blockers are currently identified for inline and presigned paths.
 
 **Remaining caution:** item 9.3 (x402 retry body resend) remains intentionally not implemented due low impact.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-upload-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-upload-process-flow.md`
+- Wallet proof spec: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Payment authorization (x402): `meta_docs/payment-authorization-eip712-trace.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/payment-authorization-eip712-trace.md`
+- `quote_id` reference: `meta_docs/quote-id-dynamodb.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/quote-id-dynamodb.md`
+- `trans_id` reference: `meta_docs/trans-id-payment-settement.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/trans-id-payment-settement.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

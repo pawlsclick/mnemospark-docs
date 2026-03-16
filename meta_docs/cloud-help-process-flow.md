@@ -1,5 +1,10 @@
 # Cloud Help Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark)  
+**Repos / components:** mnemospark (client)
+
 End-to-end documentation of the `/mnemospark-cloud` and `/mnemospark-cloud help` commands, covering the client (OpenClaw plugin and CLI). **The proxy and backend are not involved** — help is resolved entirely in the client.
 
 **Goal**: Display the mnemospark cloud command usage (list of commands and required arguments) to the user.
@@ -228,5 +233,14 @@ Discrepancies or improvements identified while documenting the help flow:
 | 9.1 | Unify slash-command string in proxy error messages | **mnemospark** | Low | ✅ Implemented. Proxy messages now consistently use the canonical slash-command form (`/mnemospark-cloud ...`). |
 | 9.2 | Optional: Log help/unknown at debug level | **mnemospark** | Low | The help handler does not log when help or unknown is requested. If the plugin API exposes a logger in the command context, adding a single debug log (e.g. "mnemospark-cloud help requested" / "unknown subcommand") would align with other commands that log and aid support. Optional; not required for correctness. |
 | 9.3 | Optional: UX for unknown subcommand | **mnemospark** | Low | When `parsed.mode === "unknown"`, the handler returns the full help text with `isError: true`. Some UIs may show the whole block in red. Alternatives: (a) return a short error line plus the same help text with `isError: false` for the help part, or (b) keep current behavior and document that unknown subcommand shows help in error style. No change required for backend; client-only UX choice. |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-help-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-help-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`
 
 No changes are recommended for **mnemospark-backend** for the help flow; the backend is not involved.

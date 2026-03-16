@@ -1,5 +1,10 @@
 # Cloud LS Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-ls, wallet-authorizer)
+
 End-to-end documentation of the `/mnemospark-cloud ls` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Obtain a successful **listing** (metadata) of **one object** stored in S3 for the user's wallet: object key, size in bytes, and bucket name. This is single-object metadata lookup, not a full bucket listing.
@@ -281,3 +286,14 @@ Discrepancies or improvements relative to the **goal** (successful listing of th
 | 9.2 | Surface backend error detail on ls failure | **mnemospark** | Medium | On proxy/backend failure, the handler catches and returns only "Cannot list storage object" with no backend message. Including the response body (or a short error message) when non-OK would help users distinguish 404 (bucket/object not found) from 403/502. |
 | 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | ✅ Implemented. `services/storage-ls/app.py` now emits structured logs for request parsing, auth confirmation, success, and 4xx/5xx error paths. |
 | 9.4 | Goal alignment | **mnemospark / mnemospark-backend** | Verified | The flow **does** align with the goal: the user supplies `--wallet-address` and `--object-key`, and the backend returns metadata (key, size_bytes, bucket) for that **one** object in the wallet's S3 bucket via `head_object`. This is a single-object listing, not a full bucket list; no change required for that contract. |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-ls-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-ls-process-flow.md`
+- Wallet proof spec: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

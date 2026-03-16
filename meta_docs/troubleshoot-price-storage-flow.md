@@ -1,5 +1,10 @@
 # Troubleshooting: price-storage flow (client → proxy → backend)
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (price-storage, wallet-authorizer)
+
 When `/mnemospark-cloud price-storage` returns **"Cannot price storage"** with no detail, the failure can be at the client, the local proxy, or the backend. This doc walks through the flow and how to isolate the failing hop.
 
 ## Event flow
@@ -129,3 +134,18 @@ So the backend authorizer is rejecting the `X-Wallet-Signature` header. Common c
    The signed `method` and `path` must match what the authorizer sees (e.g. `POST` and `/price-storage` after stage stripping). Normally they do; if you use a custom API path or method, ensure the proxy signs the same path/method the authorizer receives.
 
 After fixing, run the same `curl` to the proxy again; you should get a 200 quote response instead of the wallet_proof_invalid body.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/troubleshoot-price-storage-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/troubleshoot-price-storage-flow.md`
+- Price-storage flow: `meta_docs/cloud-price-storage-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-price-storage-process-flow.md`
+- Backend API base URL: `meta_docs/backend-api-base-url.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/backend-api-base-url.md`
+- Backend logs: `meta_docs/backend-logs.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/backend-logs.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

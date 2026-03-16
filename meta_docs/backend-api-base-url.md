@@ -1,5 +1,10 @@
 # How mnemospark client and proxy use MNEMOSPARK_BACKEND_API_BASE_URL
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy)
+
 ## 1. Single source: `config.ts`
 
 The value is read **once at module load** in `src/config.ts`:
@@ -45,6 +50,25 @@ So the client is only aware of:
 | **Client (slash cmd)** | No        | Only talks to the proxy; never uses backend URL |
 
 **Bottom line:** The **client** is not aware of `MNEMOSPARK_BACKEND_API_BASE_URL`. Only the **config** module reads it, and the **proxy** uses it when forwarding to the backend. Setting the env var in the environment where the OpenClaw gateway (and thus the proxy) runs is enough for the proxy to see it when `config.js` is first loaded.
+
+### Diagram
+
+```mermaid
+flowchart LR
+  subgraph ClientSide["Client side"]
+    CClient["mnemospark client\n(cloud-command.ts)"]
+    CProxy["Local proxy\n(proxy.ts)"]
+  end
+  subgraph BackendSide["Backend side"]
+    BConfig["config.ts\nreads MNEMOSPARK_BACKEND_API_BASE_URL"]
+    BAPI["mnemospark-backend API\n(price-storage, storage routes)"]
+  end
+
+  CClient -->|"HTTP to proxy\n(no backend URL)"| CProxy
+  CProxy -->|"import MNEMOSPARK_BACKEND_API_BASE_URL\nfrom config.ts"| BConfig
+  BConfig -->|"value at module load"| CProxy
+  CProxy -->|"forward to {baseUrl}/... "| BAPI
+```
 
 ## How to set it so it’s read at module load
 
@@ -116,3 +140,13 @@ When the backend URL is set you should see `backendConfigured: true`:
 ```
 If you see `backendConfigured: false`, the gateway process did not have `MNEMOSPARK_BACKEND_API_BASE_URL` in its environment at startup (e.g. you started via systemd but only set the var in your shell).
 
+---
+
+## Spec references
+
+- This doc: `meta_docs/backend-api-base-url.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/backend-api-base-url.md`
+- Troubleshooting price-storage: `meta_docs/troubleshoot-price-storage-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/troubleshoot-price-storage-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

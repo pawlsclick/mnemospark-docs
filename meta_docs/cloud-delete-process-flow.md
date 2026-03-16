@@ -1,5 +1,10 @@
 # Cloud Delete Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
+**Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-delete, wallet-authorizer)
+
 End-to-end documentation of the `/mnemospark-cloud delete` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Delete the object from S3 storage and remove the local system cron job that sends payment for the storage object. The backend deletes the object (and the bucket if empty); the **client** then looks up the payment cron entry by object key in `object.log` and removes that job’s entry from the tracking file `~/.openclaw/mnemospark/crontab.txt`. The code does **not** modify the user’s system crontab (e.g. via `crontab -r` or `crontab -`); it only updates the local tracking file.
@@ -308,3 +313,16 @@ Discrepancies or improvements relative to the **goal** (delete the object from S
 | 9.2 | Remove cron job from system crontab | **mnemospark** | High | The goal is to "remove the local system cron job that sends payment for the storage object." The client only updates the **tracking file** `~/.openclaw/mnemospark/crontab.txt`; it does **not** run `crontab` to remove the job from the user’s system crontab. If the system crontab is populated from this file (e.g. by another tool or by documentation), the user’s actual cron job may still run until they re-sync. Recommend: either (a) document that only the tracking file is updated and that the user must remove the job from system crontab manually (or via a documented sync step), or (b) implement removal from the system crontab (e.g. `crontab -l`, filter out the job by identifier/schedule, `crontab -` with the new content) so that "deleted from your system" accurately reflects the system crontab. |
 | 9.3 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On delete failure, the handler returns only "Cannot delete file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
 | 9.4 | Goal alignment summary | — | Verified | The flow **does** delete the object from S3 (and the bucket if empty). Cron-related behavior: the client removes the payment cron **entry from the tracking file** `crontab.txt` only; it does **not** modify the system crontab. If the product goal is to stop the system from running the payment job, 9.2 must be addressed. |
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-delete-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-delete-process-flow.md`
+- Cron id reference: `meta_docs/cron-id-usage.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cron-id-usage.md`
+- Wallet proof spec: `meta_docs/wallet-proof.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/wallet-proof.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`

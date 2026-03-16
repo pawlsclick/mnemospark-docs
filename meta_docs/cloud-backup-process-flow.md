@@ -1,5 +1,10 @@
 # Cloud Backup Process Flow
 
+**Date:** 2026-03-16  
+**Revision:** rev 1  
+**Milestone:** e2e-staging-2026-03-16 (mnemospark)  
+**Repos / components:** mnemospark (client)
+
 End-to-end documentation of the `/mnemospark-cloud backup` command, covering the client (OpenClaw plugin and CLI). **The proxy and backend are not involved** — backup is performed entirely on the client machine (local tar+gzip and filesystem writes).
 
 **Goal**: Create a compressed archive of a file or directory, store it under `~/.openclaw/mnemospark/backup`, and append object metadata to `object.log` for use by later `/mnemospark-cloud price-storage` and `/mnemospark-cloud upload` steps.
@@ -284,3 +289,12 @@ Discrepancies or improvements identified while documenting the backup flow:
 | 9.3 | Backup object.log row format and parsing | **mnemospark** | Low | Backup appends a three-column row `objectId,objectIdHash,objectSizeGb` with no timestamp. Downstream parsers (e.g. for price-storage or upload) that read object.log must be able to distinguish backup rows from price-storage and upload rows (which use different column layouts). If the format is ever extended (e.g. add a type prefix or timestamp), ensure all readers are updated. No change required if the current contract is intentional and stable. |
 
 No changes are recommended for **mnemospark-backend** for the backup flow; the backend is not involved.
+
+---
+
+## Spec references
+
+- This doc: `meta_docs/cloud-backup-process-flow.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/cloud-backup-process-flow.md`
+- Milestone overview: `meta_docs/e2e-staging-milestone-2026-03-16.md`  
+  Raw URL: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/e2e-staging-milestone-2026-03-16.md`
