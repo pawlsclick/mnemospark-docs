@@ -2,3 +2,27 @@
 .cursor/
 .DS_Store
 scripts/
+
+# Env / secrets
+.env
+.env.*
+env.json
+
+# Python artifacts (docs tooling)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Local outputs / caches
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.jsonl
+.cache/
+
+# Editor swap / temp
+*.swp
+*.swo
+*~
