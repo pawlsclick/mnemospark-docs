@@ -13,8 +13,8 @@ Create a formal mnemospark skill specification so the main OpenClaw agent can re
 
 Deliverables:
 - Skill authoring docs under `ops/` and/or `dev_docs/` describing:
-  - command catalog (`/mnemospark-cloud`, `/mnemospark-wallet`, async operation status commands)
-  - explicitly document `--async` usage for long-running upload/download and `/mnemospark-cloud op-status --operation-id <id>` behavior
+  - command catalog (`/mnemospark_cloud`, `/mnemospark_wallet`, async operation status commands)
+  - explicitly document `--async` usage for long-running upload/download and `/mnemospark_cloud op-status --operation-id <id>` behavior
   - include explicit `--name` / `--latest` / `--at` usage and ambiguity handling rules from cursor-dev-42
   - required local file paths
   - SQLite schema references and lookup patterns (including `friendly_names` Option 2 table added by cursor-dev-42 and `operations` lookups for async status)

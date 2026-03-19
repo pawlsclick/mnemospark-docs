@@ -18,7 +18,7 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_dir}"' EXIT
 
 blockrun_wallet="${tmp_dir}/blockrun-wallet.key"
-mnemospark_wallet="${tmp_dir}/mnemospark-wallet.key"
+mnemospark_wallet="${tmp_dir}/mnemospark_wallet.key"
 
 printf 'DUMMY_BLOCKRUN_WALLET' > "${blockrun_wallet}"
 

@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-download, wallet-authorizer)
 
-End-to-end documentation of the `/mnemospark-cloud download` command, covering the client, local proxy, and AWS backend.
+End-to-end documentation of the `/mnemospark_cloud download` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Download the object from S3 storage to the local host so that the file can be used. The backend returns a short-lived presigned S3 GET URL; the **proxy** fetches the object from that URL and writes it to disk, then returns the file path and metadata to the client. The client displays success but does not receive or show the file path in the current implementation.
 
@@ -14,7 +14,7 @@ End-to-end documentation of the `/mnemospark-cloud download` command, covering t
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud download --wallet-address <addr> --object-key <object-key>
+/mnemospark_cloud download --wallet-address <addr> --object-key <object-key>
 ```
 
 ### Required Parameters
@@ -75,7 +75,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
 
 #### Step 1 — Read and Parse Body
 
-- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud download"`.
+- `readProxyJsonBody(req)` parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark_cloud download"`.
 - `parseStorageObjectRequest(payload)` validates `wallet_address` and `object_key`. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_key"`.
 
 #### Step 2 — Wallet Match and Signature
@@ -139,7 +139,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Registers the `/mnemospark-cloud` command. |
+| `src/index.ts` | Registers the `/mnemospark_cloud` command. |
 | `src/cloud-command.ts` | Parses `download` args; calls `requestStorageDownload`; handles success / failure; success message "File <object_key> downloaded" (no file path). |
 | `src/cloud-storage.ts` | `StorageObjectRequest`, `StorageDownloadProxyResponse`; `parseStorageObjectRequest`, `parseStorageDownloadProxyResponse`; `requestStorageDownloadViaProxy`; `forwardStorageDownloadToBackend`; `downloadStorageToDisk` (presigned fetch + write to `outputDir`/object key path); `resolveDownloadPath`, `sanitizeObjectKeyToRelativePath`; `STORAGE_DOWNLOAD_PROXY_PATH`. |
 | `src/proxy.ts` | POST `/mnemospark/storage/download`: read body, parse, wallet match, signature, forward to backend; on 2xx, `downloadStorageToDisk(..., backendResponse)` then 200 with `success`, `key`, `file_path`, `bytes_written`. |
@@ -244,7 +244,7 @@ sequenceDiagram
     participant S3 as S3
     participant FS as Proxy FS
 
-    User->>Client: /mnemospark-cloud download --wallet-address <addr> --object-key <key>
+    User->>Client: /mnemospark_cloud download --wallet-address <addr> --object-key <key>
     Note over Client: parseCloudArgs → storageObjectRequest
     Client->>Proxy: POST /mnemospark/storage/download<br/>{ wallet_address, object_key }
     Note over Proxy: Parse JSON, validate, wallet match, sign
@@ -286,7 +286,7 @@ Discrepancies or improvements relative to the **goal** (download the object from
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud download`. |
+| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark_cloud download`. |
 | 9.2 | Configurable download output directory | **mnemospark** | Medium | ✅ Implemented. Proxy now resolves output directory from `MNEMOSPARK_DOWNLOAD_DIR`, falling back to `~/.openclaw/mnemospark/downloads`, and passes it into `downloadStorageToDisk(..., { outputDir })`. |
 | 9.3 | Show file path in success message | **mnemospark** | Medium | ✅ Implemented. The client success message now includes the returned local `file_path` ("downloaded to ..."). |
 | 9.4 | Decryption for "file can be used" | **mnemospark / mnemospark-backend** | High | Upload stores **encrypted** content in S3 (client-side AES-256-GCM). The download backend returns a presigned URL to that **ciphertext**; the proxy writes it to disk as-is. So the downloaded file is **encrypted** and not directly usable without decryption. To align with "so that the file can be used" (plain file), either: (a) document that the current flow returns the encrypted object and that decryption is out of scope or the user’s responsibility, or (b) implement decryption (e.g. backend decrypts with KEK and streams plaintext, or client decrypts after download using the same KEK resolution as upload). |

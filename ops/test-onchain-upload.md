@@ -37,7 +37,7 @@ Before testing onchain upload in staging:
 
 ## How to test
 
-1. From OpenClaw (or a host with mnemospark configured to use the staging API), run **`/mnemospark-cloud upload`** (or the equivalent `mnemospark-cloud` command) so the request hits the staging API and goes through: quote → payment auth → upload → onchain settlement.
+1. From OpenClaw (or a host with mnemospark configured to use the staging API), run **`/mnemospark_cloud upload`** (or the equivalent `mnemospark_cloud` command) so the request hits the staging API and goes through: quote → payment auth → upload → onchain settlement.
 
 2. In the upload response, read **`trans_id`**. It must be a `0x`-prefixed string of 64 hex characters (a real transaction hash).
 

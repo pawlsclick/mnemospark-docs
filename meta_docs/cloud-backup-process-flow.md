@@ -5,17 +5,17 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark)  
 **Repos / components:** mnemospark (client)
 
-End-to-end documentation of the `/mnemospark-cloud backup` command, covering the client (OpenClaw plugin and CLI). **The proxy and backend are not involved** — backup is performed entirely on the client machine (local tar+gzip and filesystem writes).
+End-to-end documentation of the `/mnemospark_cloud backup` command, covering the client (OpenClaw plugin and CLI). **The proxy and backend are not involved** — backup is performed entirely on the client machine (local tar+gzip and filesystem writes).
 
-**Goal**: Create a compressed archive of a file or directory, store it under `~/.openclaw/mnemospark/backup`, and append object metadata to `object.log` for use by later `/mnemospark-cloud price-storage` and `/mnemospark-cloud upload` steps.
+**Goal**: Create a compressed archive of a file or directory, store it under `~/.openclaw/mnemospark/backup`, and append object metadata to `object.log` for use by later `/mnemospark_cloud price-storage` and `/mnemospark_cloud upload` steps.
 
 ---
 
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud backup <file>
-/mnemospark-cloud backup <directory>
+/mnemospark_cloud backup <file>
+/mnemospark_cloud backup <directory>
 ```
 
 The argument may be a path to a **file** or **directory** on the local filesystem. Paths with spaces may be quoted (e.g. `backup "/path/with spaces"`). A leading `~` is expanded to the user's home directory.
@@ -24,7 +24,7 @@ The argument may be a path to a **file** or **directory** on the local filesyste
 
 | Argument | Description |
 |----------|-------------|
-| `<file>` or `<directory>` | Path to the file or directory to back up. Required; if missing (e.g. user runs `/mnemospark-cloud backup` with nothing after), the client treats it as an unknown subcommand and shows help with `isError: true`. |
+| `<file>` or `<directory>` | Path to the file or directory to back up. Required; if missing (e.g. user runs `/mnemospark_cloud backup` with nothing after), the client treats it as an unknown subcommand and shows help with `isError: true`. |
 
 No `--wallet-address` or other flags are required for backup.
 
@@ -133,7 +133,7 @@ No `--wallet-address` or other flags are required for backup.
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Plugin entrypoint; registers the `/mnemospark-cloud` command (which includes the backup subcommand). |
+| `src/index.ts` | Plugin entrypoint; registers the `/mnemospark_cloud` command (which includes the backup subcommand). |
 | `src/cloud-command.ts` | `parseCloudArgs()` parses `backup <target>`; `buildBackupObject()` implements platform check, path resolution, disk check, `tar -czf`, SHA-256, and `appendObjectLogLine()`. Defines `BACKUP_DIR_SUBPATH`, `DEFAULT_BACKUP_DIR`, `OBJECT_LOG_SUBPATH`, `TAR_OVERHEAD_BYTES`, `SUPPORTED_BACKUP_PLATFORMS`, `expandTilde`, `calculateInputSizeBytes`, `getAvailableDiskBytes`, `runTarGzip`, `sha256File`, `createObjectId`, `toGbString`, `appendObjectLogLine`, `UnsupportedBackupPlatformError`. |
 | `src/types.ts` | OpenClaw plugin types. |
 | `src/cli.ts` | CLI: for `mnemospark cloud backup <path>`, passes `cloudArgs` into the same `createCloudCommand().handler(ctx)`. |
@@ -161,7 +161,7 @@ Not used for backup.
 ### Client plugin
 
 - The backup handler in `src/cloud-command.ts` does **not** call `api.logger` or any other logger. Success and failure are communicated only via the return value `{ text, isError }`.
-- If the plugin failed to register the `/mnemospark-cloud` command at load time, `api.logger.warn` would have been called once in `src/index.ts`; that is unrelated to a single backup run.
+- If the plugin failed to register the `/mnemospark_cloud` command at load time, `api.logger.warn` would have been called once in `src/index.ts`; that is unrelated to a single backup run.
 
 ### Local proxy
 
@@ -205,7 +205,7 @@ None. Backup does not call the backend.
 | Condition | Result | `isError` |
 |-----------|--------|-----------|
 | Platform is not `darwin` or `linux` | `"Cloud backup is only supported on macOS and Linux."` | true |
-| Missing backup target (e.g. `/mnemospark-cloud backup` with nothing after) | Treated as unknown subcommand; help text is shown | true |
+| Missing backup target (e.g. `/mnemospark_cloud backup` with nothing after) | Treated as unknown subcommand; help text is shown | true |
 | Target path does not exist or is not file/directory | `buildBackupObject` throws; handler returns `"Cannot build storage object"` | true |
 | Backup directory not a directory (e.g. file in the way) | Throw → `"Cannot build storage object"` | true |
 | Insufficient disk space in backup dir | Throw `"Insufficient disk space for backup object"` → handler returns `"Cannot build storage object"` | true |
@@ -241,7 +241,7 @@ sequenceDiagram
     participant Client as Client<br/>(cloud-command.ts)
     participant FS as Local FS
 
-    User->>Host: /mnemospark-cloud backup <file_or_dir>
+    User->>Host: /mnemospark_cloud backup <file_or_dir>
     Host->>Client: handler(ctx) with ctx.args = "backup <path>"
     Note over Client: parseCloudArgs → { mode: "backup", backupTarget }
     Note over Client: buildBackupObject(targetPath, options)
@@ -284,7 +284,7 @@ Discrepancies or improvements identified while documenting the backup flow:
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | ✅ Implemented. `src/cloud-command.ts` now uses canonical slash-command names in those upload guidance strings (e.g. "Run /mnemospark-cloud backup first."). |
+| 9.1 | Use canonical command name in upload error messages | **mnemospark** | Low | ✅ Implemented. `src/cloud-command.ts` now uses canonical slash-command names in those upload guidance strings (e.g. "Run /mnemospark_cloud backup first."). |
 | 9.2 | Optional: Log backup success/failure | **mnemospark** | Low | The backup handler does not log. Adding an optional debug or info log when a backup succeeds (objectId, path) or fails (reason) would align with other flows and help support. Not required for correctness. |
 | 9.3 | Backup object.log row format and parsing | **mnemospark** | Low | Backup appends a three-column row `objectId,objectIdHash,objectSizeGb` with no timestamp. Downstream parsers (e.g. for price-storage or upload) that read object.log must be able to distinguish backup rows from price-storage and upload rows (which use different column layouts). If the format is ever extended (e.g. add a type prefix or timestamp), ensure all readers are updated. No change required if the current contract is intentional and stable. |
 

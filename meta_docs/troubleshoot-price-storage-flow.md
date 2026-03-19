@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (price-storage, wallet-authorizer)
 
-When `/mnemospark-cloud price-storage` returns **"Cannot price storage"** with no detail, the failure can be at the client, the local proxy, or the backend. This doc walks through the flow and how to isolate the failing hop.
+When `/mnemospark_cloud price-storage` returns **"Cannot price storage"** with no detail, the failure can be at the client, the local proxy, or the backend. This doc walks through the flow and how to isolate the failing hop.
 
 ## Event flow
 
@@ -87,7 +87,7 @@ curl -s -X POST "${BACKEND_URL}/price-storage" \
 
 ### 4. OpenClaw / gateway logs
 
-If the gateway runs under systemd, check logs for proxy errors (e.g. "Failed to forward /mnemospark-cloud price-storage"):
+If the gateway runs under systemd, check logs for proxy errors (e.g. "Failed to forward /mnemospark_cloud price-storage"):
 
 ```bash
 journalctl -u openclaw-gateway.service -n 100 --no-pager
@@ -100,7 +100,7 @@ Or inspect OpenClaw’s own log file if configured (e.g. under `~/.openclaw`).
 You ran:
 
 ```
-/mnemospark-cloud price-storage --wallet-address 0xB261Ea2c20e11576C13D45D5Da431d2Ae0471C7e --object-id 1772894207186-08b42df60b0233f5 --object-id-hash f2ccd28f048e8ff252d302019d00ad7b3ae35fbe39f3b7d2ded7788bccb02c89 --gb 0.000403116 --provider aws --region us-east-1
+/mnemospark_cloud price-storage --wallet-address 0xB261Ea2c20e11576C13D45D5Da431d2Ae0471C7e --object-id 1772894207186-08b42df60b0233f5 --object-id-hash f2ccd28f048e8ff252d302019d00ad7b3ae35fbe39f3b7d2ded7788bccb02c89 --gb 0.000403116 --provider aws --region us-east-1
 ```
 
 Arguments are valid (wallet, object-id, object-id-hash, gb, provider, region). So the most likely causes are:

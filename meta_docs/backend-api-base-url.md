@@ -30,7 +30,7 @@ So the **proxy is aware** of `MNEMOSPARK_BACKEND_API_BASE_URL` only through this
 
 ## 3. Client (slash commands / cloud flow)
 
-The **client** (OpenClaw plugin and `/mnemospark-cloud` handlers) does **not** use the backend URL. It only calls the **local proxy**:
+The **client** (OpenClaw plugin and `/mnemospark_cloud` handlers) does **not** use the backend URL. It only calls the **local proxy**:
 
 - `cloud-command.ts` uses `requestPriceStorageViaProxy`, `requestStorageLsViaProxy`, etc.
 - Those “ViaProxy” helpers (in `cloud-price-storage.ts` and `cloud-storage.ts`) call:

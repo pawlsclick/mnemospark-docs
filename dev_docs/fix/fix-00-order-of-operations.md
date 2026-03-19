@@ -1,6 +1,6 @@
 # Cloud Upload Fix: Order of Operations
 
-This document lists the fix files for the `/mnemospark-cloud upload` flow in the order they must be applied. Each fix is designed as a single agent run targeting one repo.
+This document lists the fix files for the `/mnemospark_cloud upload` flow in the order they must be applied. Each fix is designed as a single agent run targeting one repo.
 
 ## Repo Mapping
 

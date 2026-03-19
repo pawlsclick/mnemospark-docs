@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark)  
 **Repos / components:** mnemospark (client)
 
-End-to-end documentation of the `/mnemospark-wallet` and `/mnemospark-wallet export` commands.
+End-to-end documentation of the `/mnemospark_wallet` and `/mnemospark_wallet export` commands.
 
 **Goal**: Show the user their crypto wallet details (address, balance, key file location) and let them store the key safely via export. Private key and wallet data never leave the client; the proxy and mnemospark backend are **not** involved in these commands.
 
@@ -15,8 +15,8 @@ End-to-end documentation of the `/mnemospark-wallet` and `/mnemospark-wallet exp
 
 | Command | Purpose |
 |--------|---------|
-| `/mnemospark-wallet` or `/mnemospark-wallet status` | Show wallet address, USDC balance on Base, and key file path |
-| `/mnemospark-wallet export` | Show private key for backup and restore instructions |
+| `/mnemospark_wallet` or `/mnemospark_wallet status` | Show wallet address, USDC balance on Base, and key file path |
+| `/mnemospark_wallet export` | Show private key for backup and restore instructions |
 
 ### Important: No Proxy or Backend
 
@@ -45,7 +45,7 @@ So effectively:
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Registers the `/mnemospark-wallet` command and defines the handler (`createWalletCommand()`). Reads `WALLET_FILE`, derives address via viem, branches on `export` vs status, calls `BalanceMonitor` for status. |
+| `src/index.ts` | Registers the `/mnemospark_wallet` command and defines the handler (`createWalletCommand()`). Reads `WALLET_FILE`, derives address via viem, branches on `export` vs status, calls `BalanceMonitor` for status. |
 | `src/auth.ts` | Exports `WALLET_FILE` and `LEGACY_WALLET_FILE`. Defines `WALLET_DIR` = `~/.openclaw/mnemospark/wallet`, `WALLET_FILE` = `~/.openclaw/mnemospark/wallet/wallet.key`. Not used by the wallet handler for key resolution (handler reads only `WALLET_FILE` directly). |
 | `src/balance.ts` | `BalanceMonitor`: reads USDC balance on Base via viem `createPublicClient` + `http()` (public RPC). Used when subcommand is not `export`. |
 | `node:fs` | `existsSync`, `readFileSync` in the handler to read the wallet key file. |
@@ -53,7 +53,7 @@ So effectively:
 
 ### Proxy and Backend
 
-- **Proxy** (`src/proxy.ts`): Not used for `/mnemospark-wallet` or `/mnemospark-wallet export`.
+- **Proxy** (`src/proxy.ts`): Not used for `/mnemospark_wallet` or `/mnemospark_wallet export`.
 - **Backend** (mnemospark-backend): Not used for these commands. Wallet-proof and storage APIs are for cloud/upload flows only.
 
 ### Disk Paths
@@ -66,14 +66,14 @@ So effectively:
 
 ## 4. Step-by-Step Flow
 
-### 4.1 `/mnemospark-wallet` (status) and `/mnemospark-wallet export` — Shared Start
+### 4.1 `/mnemospark_wallet` (status) and `/mnemospark_wallet export` — Shared Start
 
 1. **Command registration**  
    - In `register()` in `src/index.ts`, `createWalletCommand()` is awaited and the returned command is passed to `api.registerCommand()`.  
    - If registration fails, `api.logger.warn` is called with the error message; no other logging occurs in the registration path for the wallet command.
 
 2. **Handler invocation**  
-   - When the user runs `/mnemospark-wallet` or `/mnemospark-wallet export`, OpenClaw invokes the command handler with a `PluginCommandContext` (including `ctx.args`).
+   - When the user runs `/mnemospark_wallet` or `/mnemospark_wallet export`, OpenClaw invokes the command handler with a `PluginCommandContext` (including `ctx.args`).
 
 3. **Subcommand parsing**  
    - `subcommand = ctx.args?.trim().toLowerCase() || "status"`  
@@ -91,7 +91,7 @@ So effectively:
      - `{ text: "No mnemospark wallet found. Run \`openclaw plugins install mnemospark\`.", isError: true }`  
    - No proxy or backend is called; no logging in the handler for this case.
 
-### 4.2 `/mnemospark-wallet export` — Export Path
+### 4.2 `/mnemospark_wallet export` — Export Path
 
 6. **Export branch**  
    - If `subcommand === "export"`, handler returns immediately with a single `text` block that includes:
@@ -104,7 +104,7 @@ So effectively:
        - Option 2: `mkdir -p ~/.openclaw/mnemospark/wallet && echo "..." > ~/.openclaw/mnemospark/wallet/wallet.key && chmod 600 ...`
    - No network calls, no proxy, no backend. No logging in the handler for export.
 
-### 4.3 `/mnemospark-wallet` (status) — Status Path
+### 4.3 `/mnemospark_wallet` (status) — Status Path
 
 6. **Balance check**  
    - Handler creates `new BalanceMonitor(address)`.  
@@ -122,7 +122,7 @@ So effectively:
      - **Address:** \`{address}\`
      - **{balanceText}** (e.g. `Balance: $X.XX` or `Balance: (could not check)`)
      - **Key File:** \`{WALLET_FILE}\` (path to wallet.key)
-     - **Commands:** `/mnemospark-wallet`, `/mnemospark-wallet export`
+     - **Commands:** `/mnemospark_wallet`, `/mnemospark_wallet export`
      - **Fund with USDC on Base:** https://basescan.org/address/{address}
 
 ---
@@ -190,7 +190,7 @@ So: logging for the wallet feature is limited to **registration failure**. There
 ```mermaid
 flowchart TB
   subgraph User
-    A["User runs /mnemospark-wallet or /mnemospark-wallet export"]
+    A["User runs /mnemospark_wallet or /mnemospark_wallet export"]
   end
 
   subgraph Client["mnemospark (client)"]
@@ -223,7 +223,7 @@ flowchart TB
   style Client fill:#e8f4f8
 ```
 
-**Note**: The proxy and mnemospark-backend do not appear in this flow; they are not used for `/mnemospark-wallet` or `/mnemospark-wallet export`.
+**Note**: The proxy and mnemospark-backend do not appear in this flow; they are not used for `/mnemospark_wallet` or `/mnemospark_wallet export`.
 
 ---
 
@@ -242,14 +242,14 @@ These items would align behavior with the goal of “show wallet details and let
 
 2. **Audit logging for export**  
    Export exposes the private key to the user for backup. There is no log that export was run, which can make support or security reviews harder.  
-   **Recommendation**: When building the wallet command in `register()`, close over `api` and in the handler’s export branch call `api.logger.info("mnemospark-wallet export requested")` (do not log the key or address). `PluginCommandContext` does not expose a logger, so using the plugin `api` from the closure is the way to add this.
+   **Recommendation**: When building the wallet command in `register()`, close over `api` and in the handler’s export branch call `api.logger.info("mnemospark_wallet export requested")` (do not log the key or address). `PluginCommandContext` does not expose a logger, so using the plugin `api` from the closure is the way to add this.
 
 3. **Optional: explicit “status” in help**  
-   The UI already says “/mnemospark-wallet - Show this status”. No code change strictly required; the doc and flow above assume “status” is the default when args are empty or equal “status”.
+   The UI already says “/mnemospark_wallet - Show this status”. No code change strictly required; the doc and flow above assume “status” is the default when args are empty or equal “status”.
 
 ### mnemospark-backend
 
-- No changes recommended for these commands; the backend is not involved in `/mnemospark-wallet` or `/mnemospark-wallet export`.
+- No changes recommended for these commands; the backend is not involved in `/mnemospark_wallet` or `/mnemospark_wallet export`.
 
 ---
 

@@ -72,7 +72,7 @@ Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features
 - **11–14** (client) after backend routes exist.
 - **Auth (wallet proof):** auth-01 before auth-02 (authorizer must exist before attaching). auth-02 and auth-04 coordinate so Gateway and Lambdas switch coherently. auth-05 before auth-06 (signing module used by proxy). auth-06 depends on backend accepting wallet proof (auth-01, auth-02, auth-04). See [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md).
 - **21, 22, 23 (object-key terminology):** Can run in any order. 21 = docs (mnemospark-docs). 22 = client/proxy (mnemospark). 23 = backend verification (mnemospark-backend; no changes expected).
-- **26, 27, 28 (mnemospark command structure):** 26 = mnemospark (client: /mnemospark-wallet, /mnemospark-cloud and subcommands, MNEMOSPARK_WALLET_KEY, resolution order). 27 = mnemospark-docs (docs and test scripts — workflow doc client commands, wallet/cloud/env naming). 28 = mnemospark-backend (verify no breakage, update doc refs to /mnemospark-wallet and /mnemospark-cloud). 27 and 28 depend on 26.
+- **26, 27, 28 (mnemospark command structure):** 26 = mnemospark (client: /mnemospark_wallet, /mnemospark_cloud and subcommands, MNEMOSPARK_WALLET_KEY, resolution order). 27 = mnemospark-docs (docs and test scripts — workflow doc client commands, wallet/cloud/env naming). 28 = mnemospark-backend (verify no breakage, update doc refs to /mnemospark_wallet and /mnemospark_cloud). 27 and 28 depend on 26.
 
 ---
 
@@ -94,10 +94,10 @@ Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features
 | 16      | [cursor-dev-16-cfn-observability.md](cursor-dev-16-cfn-observability.md)                             | CloudFormation: Observability                         |
 | 17      | [cursor-dev-17-cfn-cloudfront.md](cursor-dev-17-cfn-cloudfront.md)                                   | CloudFormation: CloudFront (optional)                 |
 | 18      | [cursor-dev-18-secrets-relayer-key.md](cursor-dev-18-secrets-relayer-key.md)                         | Secrets Manager for relayer private key               |
-| 11      | [cursor-dev-11-client-cloud-backup.md](cursor-dev-11-client-cloud-backup.md)                         | Client /mnemospark-cloud backup                       |
-| 12      | [cursor-dev-12-client-price-storage.md](cursor-dev-12-client-price-storage.md)                       | Client /mnemospark-cloud price-storage                |
-| 13      | [cursor-dev-13-client-upload.md](cursor-dev-13-client-upload.md)                                     | Client /mnemospark-cloud upload                       |
-| 14      | [cursor-dev-14-client-ls-download-delete.md](cursor-dev-14-client-ls-download-delete.md)             | Client /mnemospark-cloud ls, download, delete         |
+| 11      | [cursor-dev-11-client-cloud-backup.md](cursor-dev-11-client-cloud-backup.md)                         | Client /mnemospark_cloud backup                       |
+| 12      | [cursor-dev-12-client-price-storage.md](cursor-dev-12-client-price-storage.md)                       | Client /mnemospark_cloud price-storage                |
+| 13      | [cursor-dev-13-client-upload.md](cursor-dev-13-client-upload.md)                                     | Client /mnemospark_cloud upload                       |
+| 14      | [cursor-dev-14-client-ls-download-delete.md](cursor-dev-14-client-ls-download-delete.md)             | Client /mnemospark_cloud ls, download, delete         |
 | auth-01 | [cursor-dev-auth-01-lambda-authorizer.md](cursor-dev-auth-01-lambda-authorizer.md)                   | Lambda authorizer (X-Wallet-Signature)                |
 | auth-02 | [cursor-dev-auth-02-api-gateway-authorizer.md](cursor-dev-auth-02-api-gateway-authorizer.md)         | API Gateway — remove API key, attach authorizer, CORS |
 | auth-03 | [cursor-dev-auth-03-waf-rate-limits.md](cursor-dev-auth-03-waf-rate-limits.md)                       | WAF — rate limits for /price-storage                  |
@@ -110,6 +110,6 @@ Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features
 | 21      | [cursor-dev-21-docs-object-key-terminology.md](cursor-dev-21-docs-object-key-terminology.md)         | Docs: standardize on object-key (remove s3-key)       |
 | 22      | [cursor-dev-22-client-proxy-object-key-terminology.md](cursor-dev-22-client-proxy-object-key-terminology.md) | Client/proxy: object-key in help and user-facing text |
 | 23      | [cursor-dev-23-backend-verify-object-key-only.md](cursor-dev-23-backend-verify-object-key-only.md)     | Backend: verify object_key only (no changes expected) |
-| 26      | [cursor-dev-26-mnemospark-wallet-command-and-env.md](cursor-dev-26-mnemospark-wallet-command-and-env.md) | Client: /mnemospark-wallet, /mnemospark-cloud, MNEMOSPARK_WALLET_KEY, resolution order |
+| 26      | [cursor-dev-26-mnemospark_wallet-command-and-env.md](cursor-dev-26-mnemospark_wallet-command-and-env.md) | Client: /mnemospark_wallet, /mnemospark_cloud, MNEMOSPARK_WALLET_KEY, resolution order |
 | 27      | [cursor-dev-27-docs-wallet-command-and-env.md](cursor-dev-27-docs-wallet-command-and-env.md)           | Docs: mnemospark command structure — wallet, cloud, env (depends on 26) |
 | 28      | [cursor-dev-28-backend-verify-wallet-migration.md](cursor-dev-28-backend-verify-wallet-migration.md)   | Backend: verify command-structure migration does not break APIs (depends on 26) |

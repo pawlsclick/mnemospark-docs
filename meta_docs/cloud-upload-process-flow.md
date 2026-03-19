@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-upload, payment-settle, wallet-authorizer)
 
-End-to-end documentation of the `/mnemospark-cloud upload` command, covering the client, local proxy, and AWS backend.
+End-to-end documentation of the `/mnemospark_cloud upload` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Successful USDC payment and encrypted file storage in S3.
 
@@ -14,16 +14,16 @@ End-to-end documentation of the `/mnemospark-cloud upload` command, covering the
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud upload --quote-id <id> --wallet-address <addr> --object-id <id> --object-id-hash <hash>
+/mnemospark_cloud upload --quote-id <id> --wallet-address <addr> --object-id <id> --object-id-hash <hash>
 ```
 
 ### Required Parameters
 
 | Flag | Description |
 |---|---|
-| `--quote-id` | ID from a prior `/mnemospark-cloud price-storage` quote |
+| `--quote-id` | ID from a prior `/mnemospark_cloud price-storage` quote |
 | `--wallet-address` | EVM wallet address (0x-prefixed, 20-byte hex) |
-| `--object-id` | Object identifier from a prior `/mnemospark-cloud backup` step |
+| `--object-id` | Object identifier from a prior `/mnemospark_cloud backup` step |
 | `--object-id-hash` | SHA-256 hash of the local backup archive |
 
 All four flags are mandatory. Missing any causes an immediate client-side error before any network call.
@@ -147,7 +147,7 @@ Calculates `requiredMicros` from `quoted_storage_price * 1,000,000`. Queries the
   "error": "insufficient_balance",
   "message": "Insufficient USDC balance. Current: $X.XX, Required: $Y.YY",
   "wallet": "0x...",
-  "help": "Fund wallet 0x... on Base before running /mnemospark-cloud upload"
+  "help": "Fund wallet 0x... on Base before running /mnemospark_cloud upload"
 }
 ```
 
@@ -385,7 +385,7 @@ Backend 200 + upload_url + confirmation_required: true
 
 | File | Role |
 |---|---|
-| `src/index.ts` | Plugin entrypoint; registers the `/mnemospark-cloud` command and starts the proxy |
+| `src/index.ts` | Plugin entrypoint; registers the `/mnemospark_cloud` command and starts the proxy |
 | `src/cloud-command.ts` | Command definition, argument parsing, upload orchestration, AES-256-GCM encryption, presigned upload, post-upload logging/cron |
 | `src/cloud-price-storage.ts` | `StorageUploadRequest`/`UploadPayload` types, `requestStorageUploadViaProxy()`, `forwardStorageUploadToBackend()`, request/response parsing |
 | `src/proxy.ts` | Local HTTP proxy server; routes `/mnemospark/upload` to backend, adds wallet signatures, checks USDC balance |
@@ -495,9 +495,9 @@ Thank you for using mnemospark!
 | Condition | Error Message | `isError` |
 |---|---|---|
 | Missing required flags | `"Cannot upload storage object: required arguments are --quote-id, --wallet-address, --object-id, --object-id-hash."` | true |
-| Quote not found in object.log | `"Cannot upload storage object: quote-id not found in object.log. Run /mnemospark-cloud price-storage first."` | true |
+| Quote not found in object.log | `"Cannot upload storage object: quote-id not found in object.log. Run /mnemospark_cloud price-storage first."` | true |
 | Quote details mismatch | `"Cannot upload storage object: quote details do not match wallet/object arguments."` | true |
-| Archive not found locally | `"Cannot upload storage object: local archive not found at <path>. Run /mnemospark-cloud backup first."` | true |
+| Archive not found locally | `"Cannot upload storage object: local archive not found at <path>. Run /mnemospark_cloud backup first."` | true |
 | Archive is not a file | `"Cannot upload storage object: local archive path is not a file (<path>)."` | true |
 | Archive hash mismatch | `"Cannot upload storage object: object-id-hash does not match local archive."` | true |
 | Wallet address mismatch | `"Cannot upload storage object: wallet key address <derived> does not match --wallet-address <given>."` | true |
@@ -555,7 +555,7 @@ sequenceDiagram
     participant DDB as DynamoDB
     participant S3 as S3
 
-    User->>Client: /mnemospark-cloud upload --quote-id ... --wallet-address ... --object-id ... --object-id-hash ...
+    User->>Client: /mnemospark_cloud upload --quote-id ... --wallet-address ... --object-id ... --object-id-hash ...
 
     Note over Client: Parse args, validate flags
     Note over Client: Lookup quote in object.log

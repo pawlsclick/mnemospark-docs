@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-ls, wallet-authorizer)
 
-End-to-end documentation of the `/mnemospark-cloud ls` command, covering the client, local proxy, and AWS backend.
+End-to-end documentation of the `/mnemospark_cloud ls` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Obtain a successful **listing** (metadata) of **one object** stored in S3 for the user's wallet: object key, size in bytes, and bucket name. This is single-object metadata lookup, not a full bucket listing.
 
@@ -14,7 +14,7 @@ End-to-end documentation of the `/mnemospark-cloud ls` command, covering the cli
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud ls --wallet-address <addr> --object-key <object-key>
+/mnemospark_cloud ls --wallet-address <addr> --object-key <object-key>
 ```
 
 ### Required Parameters
@@ -136,7 +136,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket; defaults on 
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Registers the `/mnemospark-cloud` command. |
+| `src/index.ts` | Registers the `/mnemospark_cloud` command. |
 | `src/cloud-command.ts` | Parses `ls` args; calls `requestStorageLs`; handles success / `!success` / throw; `formatStorageLsUserMessage`. |
 | `src/cloud-storage.ts` | `StorageObjectRequest`, `StorageLsResponse`; `parseStorageObjectRequest`, `parseStorageLsResponse`; `requestStorageLsViaProxy` (client → proxy); `forwardStorageLsToBackend` (proxy → backend); `STORAGE_LS_PROXY_PATH`; `requestJsonViaProxy`, `forwardStorageToBackend`. |
 | `src/proxy.ts` | POST `/mnemospark/storage/ls` handler: read body, parse, wallet match, wallet signature, `forwardStorageLsToBackend`, relay response or 502. |
@@ -244,7 +244,7 @@ sequenceDiagram
     participant LsLambda as StorageLs<br/>(Lambda)
     participant S3 as S3
 
-    User->>Client: /mnemospark-cloud ls --wallet-address <addr> --object-key <key>
+    User->>Client: /mnemospark_cloud ls --wallet-address <addr> --object-key <key>
     Note over Client: parseCloudArgs → storageObjectRequest
     Client->>Proxy: POST /mnemospark/storage/ls<br/>{ wallet_address, object_key }
     Note over Proxy: Parse JSON, validate fields
@@ -282,7 +282,7 @@ Discrepancies or improvements relative to the **goal** (successful listing of th
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark-cloud ls`. |
+| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | ✅ Implemented. Proxy error strings now use `/mnemospark_cloud ls`. |
 | 9.2 | Surface backend error detail on ls failure | **mnemospark** | Medium | On proxy/backend failure, the handler catches and returns only "Cannot list storage object" with no backend message. Including the response body (or a short error message) when non-OK would help users distinguish 404 (bucket/object not found) from 403/502. |
 | 9.3 | Structured logging in storage-ls Lambda | **mnemospark-backend** | Low | ✅ Implemented. `services/storage-ls/app.py` now emits structured logs for request parsing, auth confirmation, success, and 4xx/5xx error paths. |
 | 9.4 | Goal alignment | **mnemospark / mnemospark-backend** | Verified | The flow **does** align with the goal: the user supplies `--wallet-address` and `--object-key`, and the backend returns metadata (key, size_bytes, bucket) for that **one** object in the wallet's S3 bucket via `head_object`. This is a single-object listing, not a full bucket list; no change required for that contract. |

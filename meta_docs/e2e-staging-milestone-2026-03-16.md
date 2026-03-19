@@ -63,10 +63,10 @@ sequenceDiagram
     participant Download as StorageDownload
     participant S3 as S3
 
-    User->>Client: /mnemospark-cloud backup <path>
+    User->>Client: /mnemospark_cloud backup <path>
     Client->>Client: Build archive, write object.log
 
-    User->>Client: /mnemospark-cloud price-storage ...
+    User->>Client: /mnemospark_cloud price-storage ...
     Client->>Proxy: POST /mnemospark/price-storage
     Proxy->>APIGW: POST /price-storage (+X-Wallet-Signature optional)
     APIGW->>Price: Invoke Lambda
@@ -75,7 +75,7 @@ sequenceDiagram
     Proxy-->>Client: 200
     Client->>Client: Append quote to object.log
 
-    User->>Client: /mnemospark-cloud upload ...
+    User->>Client: /mnemospark_cloud upload ...
     Client->>Client: Verify archive, encrypt, resolve wallet, set up x402
     Client->>Proxy: POST /mnemospark/upload (+payment headers on retry)
     Proxy->>APIGW: POST /storage/upload (+X-Wallet-Signature)
@@ -88,7 +88,7 @@ sequenceDiagram
     Proxy-->>Client: Response
     Client->>Client: Handle payment + S3 result, write object.log + crontab.txt
 
-    User->>Client: /mnemospark-cloud ls ...
+    User->>Client: /mnemospark_cloud ls ...
     Client->>Proxy: POST /mnemospark/storage/ls
     Proxy->>APIGW: POST /storage/ls (+X-Wallet-Signature)
     APIGW->>Auth: Authorize
@@ -99,7 +99,7 @@ sequenceDiagram
     APIGW-->>Proxy: 200
     Proxy-->>Client: 200
 
-    User->>Client: /mnemospark-cloud download ...
+    User->>Client: /mnemospark_cloud download ...
     Client->>Proxy: POST /mnemospark/storage/download
     Proxy->>APIGW: POST /storage/download (+X-Wallet-Signature)
     APIGW->>Auth: Authorize

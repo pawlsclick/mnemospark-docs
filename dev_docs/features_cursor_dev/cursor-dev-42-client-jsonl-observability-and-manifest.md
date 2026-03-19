@@ -44,22 +44,22 @@ SQLite schema update is required in this run to support reliable friendly-name r
 
 ## Command contract (explicit)
 
-Update `/mnemospark-cloud` help + parser behavior to support:
+Update `/mnemospark_cloud` help + parser behavior to support:
 
-- `/mnemospark-cloud backup <file|directory> [--name <friendly-name>]`
+- `/mnemospark_cloud backup <file|directory> [--name <friendly-name>]`
   - If `--name` omitted, default to basename of `<file|directory>`.
   - This is where the human-facing label usually starts.
 
-- `/mnemospark-cloud price-storage --wallet-address <addr> --object-id <id> --object-id-hash <hash> --gb <gb> --provider <provider> --region <region>`
+- `/mnemospark_cloud price-storage --wallet-address <addr> --object-id <id> --object-id-hash <hash> --gb <gb> --provider <provider> --region <region>`
   - No required `--name`.
   - May enrich output with friendly name when known client-side.
 
-- `/mnemospark-cloud upload --quote-id <quote-id> --wallet-address <addr> --object-id <id> --object-id-hash <hash> [--name <friendly-name>]`
+- `/mnemospark_cloud upload --quote-id <quote-id> --wallet-address <addr> --object-id <id> --object-id-hash <hash> [--name <friendly-name>]`
   - Optional `--name` updates/creates client-side mapping.
 
-- `/mnemospark-cloud ls --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
-- `/mnemospark-cloud download --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
-- `/mnemospark-cloud delete --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
+- `/mnemospark_cloud ls --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
+- `/mnemospark_cloud download --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
+- `/mnemospark_cloud delete --wallet-address <addr> [--object-key <object-key> | --name <friendly-name>] [--latest | --at <timestamp>]`
 
 Resolution rules:
 - `--object-key` and `--name` are mutually exclusive.
@@ -84,7 +84,7 @@ Resolution rules:
   - [ ] Includes migration v2 for dedicated `friendly_names` table.
   - [ ] `manifest.jsonl` records friendly-name history/audit entries.
   - [ ] Name-to-object resolution supports duplicate handling (`--latest` or `--at`).
-  - [ ] `/mnemospark-cloud help` explicitly documents new `--name` command structure.
+  - [ ] `/mnemospark_cloud help` explicitly documents new `--name` command structure.
   - [ ] Event keys are stable and documented in code comments/tests.
   - [ ] Rotation mechanism implemented and tested (10 MB, keep 10, gzip).
   - [ ] Branch from `main`, open PR.

@@ -9,7 +9,7 @@
 
 ## Scope
 
-Fix the **client-backend request body schema mismatch** that blocks all `/mnemospark-cloud upload` requests.
+Fix the **client-backend request body schema mismatch** that blocks all `/mnemospark_cloud upload` requests.
 
 The client sends a `StorageUploadRequest` with a nested `payload` object (defined in `src/cloud-price-storage.ts` lines 36-54):
 

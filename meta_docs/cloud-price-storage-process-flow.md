@@ -5,16 +5,16 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (price-storage, wallet-authorizer)
 
-End-to-end documentation of the `/mnemospark-cloud price-storage` command, covering the client, local proxy, and AWS backend.
+End-to-end documentation of the `/mnemospark_cloud price-storage` command, covering the client, local proxy, and AWS backend.
 
-**Goal**: Obtain a successful quote for **S3 storage costs** and **outbound data transfer costs** based on the file size (`--gb`) requested. The quote is stored in DynamoDB (with TTL) and returned to the user so they can proceed to `/mnemospark-cloud upload` with a valid `quote-id`.
+**Goal**: Obtain a successful quote for **S3 storage costs** and **outbound data transfer costs** based on the file size (`--gb`) requested. The quote is stored in DynamoDB (with TTL) and returned to the user so they can proceed to `/mnemospark_cloud upload` with a valid `quote-id`.
 
 ---
 
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud price-storage --wallet-address <addr> --object-id <id> --object-id-hash <hash> --gb <gb> --provider <provider> --region <region>
+/mnemospark_cloud price-storage --wallet-address <addr> --object-id <id> --object-id-hash <hash> --gb <gb> --provider <provider> --region <region>
 ```
 
 ### Required Parameters
@@ -22,7 +22,7 @@ End-to-end documentation of the `/mnemospark-cloud price-storage` command, cover
 | Flag | Description |
 |------|-------------|
 | `--wallet-address` | EVM wallet address (0x-prefixed). Required for all storage commands; used to associate the quote with the wallet for upload. |
-| `--object-id` | Object identifier from a prior `/mnemospark-cloud backup` step. |
+| `--object-id` | Object identifier from a prior `/mnemospark_cloud backup` step. |
 | `--object-id-hash` | SHA-256 hash of the backup archive (from backup output). |
 | `--gb` | File size in GB (decimal, e.g. `0.000403116`). Used by the backend to compute S3 storage and outbound data transfer costs. |
 | `--provider` | Storage provider. Only `aws` is supported for MVP. |
@@ -32,7 +32,7 @@ All six are mandatory. Missing or invalid args cause a client-side error before 
 
 ### Prerequisites
 
-1. User has run `/mnemospark-cloud backup` and has `object-id`, `object-id-hash`, and size in GB (e.g. from backup output or object.log).
+1. User has run `/mnemospark_cloud backup` and has `object-id`, `object-id-hash`, and size in GB (e.g. from backup output or object.log).
 2. Local proxy must be running on `127.0.0.1:7120` (or `MNEMOSPARK_PROXY_PORT`).
 3. Proxy must have `MNEMOSPARK_BACKEND_API_BASE_URL` set so it can forward to the backend. No wallet key is required on the client for price-storage (backend treats wallet proof as optional for this route).
 
@@ -79,7 +79,7 @@ All six are mandatory. Missing or invalid args cause a client-side error before 
 `formatPriceStorageUserMessage(quote)` (line 1143) returns two lines:
 
 - Quote valid for 1 hour, storage price, object_id, file size, provider, location.
-- Next step: run `/mnemospark-cloud upload --quote-id <id> --wallet-address <addr> --object-id <id> --object-id-hash <hash>`.
+- Next step: run `/mnemospark_cloud upload --quote-id <id> --wallet-address <addr> --object-id <id> --object-id-hash <hash>`.
 
 Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
@@ -91,7 +91,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
 #### Step 1 — Read and Parse Body
 
-- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark-cloud price-storage"`.
+- `readProxyJsonBody(req)` reads the request body and parses JSON. On failure, proxy responds **400** with `"Invalid JSON body for /mnemospark_cloud price-storage"`.
 - `parsePriceStorageQuoteRequest(payload)` validates required fields. If `null`, proxy responds **400** with `"Missing required fields: wallet_address, object_id, object_id_hash, gb, provider, region"`.
 
 #### Step 2 — Wallet Signature (Optional)
@@ -104,13 +104,13 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
   - **URL**: `POST {MNEMOSPARK_BACKEND_API_BASE_URL}/price-storage`.
   - **Headers**: `Content-Type: application/json`, and `X-Wallet-Signature` if present.
   - **Body**: Same JSON as received from the client.
-- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark-cloud price-storage: ...".
+- If `backendBaseUrl` is not set, `forwardPriceStorageToBackend` throws; proxy catches and responds **502** with `proxy_error` and message including "MNEMOSPARK_BACKEND_API_BASE_URL is not configured" or "Failed to forward /mnemospark_cloud price-storage: ...".
 
 #### Step 4 — Relay Response
 
 - Proxy forwards the backend's status code, body, and payment-related headers (e.g. `PAYMENT-REQUIRED`, `x-payment-required`) to the client. No body transformation.
 - If `normalizeBackendAuthFailure()` detects an auth failure (401/403), proxy sends that status and body. For price-storage, wallet is optional so auth failure is less common.
-- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark-cloud price-storage: <error>"`.
+- On any other exception (e.g. network error), proxy responds **502** with `"Failed to forward /mnemospark_cloud price-storage: <error>"`.
 
 ---
 
@@ -167,7 +167,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Registers the `/mnemospark-cloud` command. |
+| `src/index.ts` | Registers the `/mnemospark_cloud` command. |
 | `src/cloud-command.ts` | Parses `price-storage` args; calls `requestPriceStorageViaProxy`; `appendPriceStorageQuoteLog`; `formatPriceStorageUserMessage`; handles success/error and upload next-step message. |
 | `src/cloud-price-storage.ts` | `PriceStorageQuoteRequest` / `PriceStorageQuoteResponse` types; `parsePriceStorageQuoteRequest` / `parsePriceStorageQuoteResponse`; `requestPriceStorageViaProxy` (client → proxy); `forwardPriceStorageToBackend` (proxy → backend); `PRICE_STORAGE_PROXY_PATH`. |
 | `src/proxy.ts` | POST `/mnemospark/price-storage` handler: read body, parse, optional wallet signature, `forwardPriceStorageToBackend`, relay response or 502. |
@@ -217,7 +217,7 @@ Handler returns `{ text: formatPriceStorageUserMessage(quote) }` (no `isError`).
 Two lines:
 
 - Your storage quote `<quote_id>` is valid for 1 hour, the storage price is `<storage_price>` for `<object_id>` with file size of `<object_size_gb>` in `<provider>` `<location>`.
-- If you accept this quote run the command `/mnemospark-cloud upload --quote-id <quote_id> --wallet-address <addr> --object-id <object_id> --object-id-hash <object_id_hash>`.
+- If you accept this quote run the command `/mnemospark_cloud upload --quote-id <quote_id> --wallet-address <addr> --object-id <object_id> --object-id-hash <object_id_hash>`.
 
 ### What gets written
 
@@ -277,7 +277,7 @@ sequenceDiagram
     participant Pricing as AWS Pricing API<br/>(GetProducts)
     participant DDB as DynamoDB (quotes)
 
-    User->>Client: /mnemospark-cloud price-storage --wallet-address ... --object-id ... --object-id-hash ... --gb ... --provider aws --region ...
+    User->>Client: /mnemospark_cloud price-storage --wallet-address ... --object-id ... --object-id-hash ... --gb ... --provider aws --region ...
     Note over Client: parseCloudArgs → priceStorageRequest
     Client->>Proxy: POST /mnemospark/price-storage<br/>{ wallet_address, object_id, object_id_hash, gb, provider, region }
     Note over Proxy: Parse JSON, validate fields
@@ -301,7 +301,7 @@ sequenceDiagram
     Proxy-->>Client: 200 + body
     Note over Client: parsePriceStorageQuoteResponse
     Note over Client: appendPriceStorageQuoteLog(object.log)
-    Client-->>User: Quote summary + next-step /mnemospark-cloud upload command
+    Client-->>User: Quote summary + next-step /mnemospark_cloud upload command
 ```
 
 ---
@@ -312,7 +312,7 @@ Discrepancies or improvements relative to the **goal** (successful quote for S3 
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | ✅ Implemented. Proxy/client messaging now uses the canonical slash-command format (`/mnemospark-cloud ...`) including price-storage and upload guidance text. |
+| 9.1 | Use canonical command name in proxy/client messages | **mnemospark** | Low | ✅ Implemented. Proxy/client messaging now uses the canonical slash-command format (`/mnemospark_cloud ...`) including price-storage and upload guidance text. |
 | 9.2 | Structured logging in price-storage Lambda | **mnemospark-backend** | Medium | ✅ Implemented. `services/price-storage/app.py` now emits structured logs for request parsing, computed costs/markup, quote write, and bad-request/internal-error paths. |
 | 9.3 | BCM integration test / key validation | **mnemospark-backend** | Medium | Per mnemospark-backend AGENTS.md, the integration test `test_real_bcm_estimate_or_skip_when_no_credentials` (e.g. in estimate-storage or related tests) can fail with BCM `ValidationException` (e.g. key format `[a-zA-Z0-9]*`). If any BCM usage key (in estimate-storage or estimate-transfer) uses hyphens or other invalid characters, fix the key to satisfy BCM so real deployments and integration tests succeed. Current estimate-storage uses `s3stor01` and estimate-transfer uses `dtxfer01`; if other code paths or tests use different keys, ensure they are valid. |
 | 9.4 | Goal alignment | **mnemospark-backend** | Verified | The current flow **does** align with the goal: backend uses `--gb`, `--provider`, and `--region` to compute S3 storage cost (estimate-storage) and outbound data transfer cost (estimate-transfer with `PRICE_STORAGE_TRANSFER_DIRECTION: out`), then applies markup and returns a single `storage_price`. No change required for goal alignment; 9.2 and 9.3 improve robustness and observability. |

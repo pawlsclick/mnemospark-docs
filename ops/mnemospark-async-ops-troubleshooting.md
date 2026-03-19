@@ -3,7 +3,7 @@
 ## Quick triage checklist
 1. Confirm command was launched with `--async`
 2. Capture returned `operation-id`
-3. Check status via `/mnemospark-cloud op-status --operation-id <id>`
+3. Check status via `/mnemospark_cloud op-status --operation-id <id>`
 4. Query `operations` table for lifecycle
 5. Correlate with `events.jsonl` + `proxy-events.jsonl`
 
@@ -33,7 +33,7 @@ If missing and cannot install, fail fast.
 
 ### Check progress
 ```bash
-/mnemospark-cloud op-status --operation-id <id>
+/mnemospark_cloud op-status --operation-id <id>
 ```
 
 ### DB verification

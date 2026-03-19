@@ -37,7 +37,7 @@ Expected operator experience:
 
 ## 3) Command Catalog (what the skill orchestrates)
 
-## `/mnemospark-cloud`
+## `/mnemospark_cloud`
 
 ### Core
 - `backup <file|directory> [--name <friendly-name>]`
@@ -53,7 +53,7 @@ Expected operator experience:
 - If `--name` maps to multiple objects and neither `--latest` nor `--at` is present, return ambiguity error.
 - Name resolution is SQLite-first (`friendly_names`), not JSONL parsing.
 
-## `/mnemospark-wallet`
+## `/mnemospark_wallet`
 - wallet inspection/export and setup support per existing mnemospark wallet command behavior.
 
 ---
@@ -159,9 +159,9 @@ Use for mnemospark cloud backup/storage flows, quote/upload/download/delete, asy
 
 ## 10) Example prompts/task strings for main agent
 
-- "Run `/mnemospark-cloud backup /path/to/dir --name \"Quarterly Notes\"`, then quote storage and prepare upload command."
-- "Start async upload with `/mnemospark-cloud upload ... --async` and report the operation ID immediately."
-- "Check operation progress using `/mnemospark-cloud op-status --operation-id <id>` and summarize for user."
+- "Run `/mnemospark_cloud backup /path/to/dir --name \"Quarterly Notes\"`, then quote storage and prepare upload command."
+- "Start async upload with `/mnemospark_cloud upload ... --async` and report the operation ID immediately."
+- "Check operation progress using `/mnemospark_cloud op-status --operation-id <id>` and summarize for user."
 - "Resolve `--name ProjectAlpha --latest` and download to local workspace asynchronously."
 - "Troubleshoot failed upload by correlating `operations` row with `events.jsonl` and `proxy-events.jsonl`."
 

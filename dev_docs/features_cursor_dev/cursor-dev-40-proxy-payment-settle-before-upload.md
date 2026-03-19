@@ -9,7 +9,7 @@
 
 ## Scope
 
-**Option 1 — Expose proxy route:** The proxy must expose a dedicated path `POST /mnemospark/payment/settle` that forwards to backend `POST /payment/settle`, and the upload handler must call payment/settle before upload. No new user-facing slash command (e.g. `/mnemospark-cloud pay`) is added; user flow remains price-storage → upload. Depends on cursor-dev-39 (client payment/settle API) only if reusing `forwardPaymentSettleToBackend` from the client package; otherwise implement forwarding in proxy.
+**Option 1 — Expose proxy route:** The proxy must expose a dedicated path `POST /mnemospark/payment/settle` that forwards to backend `POST /payment/settle`, and the upload handler must call payment/settle before upload. No new user-facing slash command (e.g. `/mnemospark_cloud pay`) is added; user flow remains price-storage → upload. Depends on cursor-dev-39 (client payment/settle API) only if reusing `forwardPaymentSettleToBackend` from the client package; otherwise implement forwarding in proxy.
 
 1. **Add proxy path for payment/settle**
    - Add a new proxy route: `POST /mnemospark/payment/settle` (or equivalent path consistent with existing proxy paths, e.g. `POST /mnemospark/payment/settle`). The handler must:

@@ -58,7 +58,7 @@ Concretely:
 
 ## References
 
-- High-level process for `/mnemospark-cloud price-storage`:
+- High-level process for `/mnemospark_cloud price-storage`:
   - [cloud-price-storage-process-flow.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/cloud-price-storage-process-flow.md)
 - Backend API base URL and how the client/proxy talks to this backend:
   - [backend-api-base-url.md](https://github.com/pawlsclick/mnemospark-docs/blob/main/meta_docs/backend-api-base-url.md)

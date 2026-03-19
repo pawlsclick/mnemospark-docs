@@ -5,7 +5,7 @@
 **Milestone:** e2e-staging-2026-03-16 (mnemospark & mnemospark-backend)  
 **Repos / components:** mnemospark (client, proxy), mnemospark-backend (storage-delete, wallet-authorizer)
 
-End-to-end documentation of the `/mnemospark-cloud delete` command, covering the client, local proxy, and AWS backend.
+End-to-end documentation of the `/mnemospark_cloud delete` command, covering the client, local proxy, and AWS backend.
 
 **Goal**: Delete the object from S3 storage and remove the local system cron job that sends payment for the storage object. The backend deletes the object (and the bucket if empty); the **client** then looks up the payment cron entry by object key in `object.log` and removes that job’s entry from the tracking file `~/.openclaw/mnemospark/crontab.txt`. The code does **not** modify the user’s system crontab (e.g. via `crontab -r` or `crontab -`); it only updates the local tracking file.
 
@@ -14,7 +14,7 @@ End-to-end documentation of the `/mnemospark-cloud delete` command, covering the
 ## 1. Command Overview
 
 ```
-/mnemospark-cloud delete --wallet-address <addr> --object-key <object-key>
+/mnemospark_cloud delete --wallet-address <addr> --object-key <object-key>
 ```
 
 ### Required Parameters
@@ -149,7 +149,7 @@ Optional: `--location` or `--region` (AWS region for the S3 bucket).
 
 | File | Role |
 |------|------|
-| `src/index.ts` | Registers the `/mnemospark-cloud` command. |
+| `src/index.ts` | Registers the `/mnemospark_cloud` command. |
 | `src/cloud-command.ts` | Parses `delete` args; calls `requestStorageDelete`; on success runs `findLoggedStoragePaymentCronByObjectKey` and `removeStoragePaymentCronJob`; formats `formatStorageDeleteUserMessage`. Defines `OBJECT_LOG_SUBPATH`, `CRON_TABLE_SUBPATH`, `resolveObjectLogPath`, `resolveCronTablePath`, cron parsing and file read/write. |
 | `src/cloud-storage.ts` | `StorageObjectRequest`, `StorageDeleteResponse`; `parseStorageObjectRequest`, `parseStorageDeleteResponse`; `requestStorageDeleteViaProxy`; `forwardStorageDeleteToBackend` (forwards to `/storage/delete`); `STORAGE_DELETE_PROXY_PATH`. |
 | `src/proxy.ts` | POST `/mnemospark/storage/delete`: read body, parse, wallet match, signature, forward to backend; forward backend status/body to client; 502 on exception. |
@@ -259,7 +259,7 @@ sequenceDiagram
     participant ObjectLog as object.log
     participant CrontabTxt as crontab.txt
 
-    User->>Client: /mnemospark-cloud delete --wallet-address <addr> --object-key <key>
+    User->>Client: /mnemospark_cloud delete --wallet-address <addr> --object-key <key>
     Note over Client: parseCloudArgs → storageObjectRequest
     Client->>Proxy: POST /mnemospark/storage/delete<br/>{ wallet_address, object_key }
     Note over Proxy: Parse JSON, validate, wallet match, sign
@@ -309,7 +309,7 @@ Discrepancies or improvements relative to the **goal** (delete the object from S
 
 | # | Change | Repo | Severity | Description |
 |---|--------|------|----------|-------------|
-| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud delete" and "Failed to forward /mnemospark cloud delete". Use `/mnemospark-cloud delete` for consistency. |
+| 9.1 | Use canonical command name in proxy messages | **mnemospark** | Low | Proxy error strings say "Invalid JSON body for /mnemospark cloud delete" and "Failed to forward /mnemospark cloud delete". Use `/mnemospark_cloud delete` for consistency. |
 | 9.2 | Remove cron job from system crontab | **mnemospark** | High | The goal is to "remove the local system cron job that sends payment for the storage object." The client only updates the **tracking file** `~/.openclaw/mnemospark/crontab.txt`; it does **not** run `crontab` to remove the job from the user’s system crontab. If the system crontab is populated from this file (e.g. by another tool or by documentation), the user’s actual cron job may still run until they re-sync. Recommend: either (a) document that only the tracking file is updated and that the user must remove the job from system crontab manually (or via a documented sync step), or (b) implement removal from the system crontab (e.g. `crontab -l`, filter out the job by identifier/schedule, `crontab -` with the new content) so that "deleted from your system" accurately reflects the system crontab. |
 | 9.3 | Surface backend/proxy error detail on failure | **mnemospark** | Low | On delete failure, the handler returns only "Cannot delete file". Including the proxy response body or a short error message would help users distinguish 404 (object not found) from 403/502. |
 | 9.4 | Goal alignment summary | — | Verified | The flow **does** delete the object from S3 (and the bucket if empty). Cron-related behavior: the client removes the payment cron **entry from the tracking file** `crontab.txt` only; it does **not** modify the system crontab. If the product goal is to stop the system from running the payment job, 9.2 must be addressed. |

@@ -41,7 +41,7 @@ Each doc must include:
 - [ ] JSONL examples cover filtering by quote_id/object_id/operation_id.
 - [ ] JSONL docs explicitly cover `events.jsonl`, `manifest.jsonl`, and `proxy-events.jsonl` (including best-effort logging, rotation, and terminal success/failure event interpretation from cursor-dev-43).
 - [ ] Async orchestration runbook includes progress, timeout, retry, and stuck-task procedures.
-- [ ] Async runbook includes `/mnemospark-cloud op-status --operation-id <id>` troubleshooting and SQLite-unavailable fallback behavior (`Operation not found` semantics).
+- [ ] Async runbook includes `/mnemospark_cloud op-status --operation-id <id>` troubleshooting and SQLite-unavailable fallback behavior (`Operation not found` semantics).
 - [ ] Branch from `main`, open PR.
 
 ## Task string (optional)
