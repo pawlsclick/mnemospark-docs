@@ -3,7 +3,7 @@
 **ID:** cursor-dev-47  
 **Repo:** mnemospark  
 **Date:** 2026-03-19  
-**Revision:** rev 1  
+**Revision:** rev 2  
 **Last commit in repo:** 3655a00 fix(cloud): harden upload redirects and make friendly-name resolution SQLite-first
 
 **Workspace for Agent:** Work only in **this repo** (the repo you were started in). This repo is **mnemospark**. This repo contains the plugin, command parser/handlers, SQLite datastore integration, and JSONL observability paths for cloud operations. Do **not** clone, or require access to any other repository; all code and references are in this file. The primary spec for this work is `dev_docs/features_cursor_dev/cursor-dev-44-openclaw-subagent-orchestration-for-mnemospark.md` (raw: `https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/dev_docs/features_cursor_dev/cursor-dev-44-openclaw-subagent-orchestration-for-mnemospark.md`).
@@ -39,13 +39,13 @@ Required behavior:
 sequenceDiagram
   autonumber
   participant User
-  participant Main as Main Agent (/mnemospark-cloud)
+  participant Main as Main Agent (/mnemospark_cloud)
   participant DB as SQLite operations
   participant SA as OpenClaw Subagent Session
   participant Proxy as mnemospark proxy
   participant Backend as mnemospark backend
 
-  User->>Main: /mnemospark-cloud upload ... --async --orchestrator subagent
+  User->>Main: /mnemospark_cloud upload ... --async --orchestrator subagent
   Main->>DB: upsertOperation(status=started)
   Main->>Main: spawn subagent with task envelope
   Main-->>User: operation-id + subagent-session + status command
@@ -61,6 +61,8 @@ sequenceDiagram
 
 ### 1) Command interface additions (mnemospark cloud)
 
+Canonical slash command name for native surfaces is `/mnemospark_cloud` (underscore).
+
 Add optional flags for long-running commands:
 
 - `--orchestrator <mode>` where mode in `{inline, subagent}` (default remains current behavior for backward compatibility; for `--async`, default should become `subagent` once stable).
@@ -69,10 +71,10 @@ Add optional flags for long-running commands:
 
 Command examples:
 
-- `/mnemospark-cloud upload ... --async --orchestrator subagent`
-- `/mnemospark-cloud download ... --async --orchestrator subagent --timeout-seconds 900`
-- `/mnemospark-cloud op-status --operation-id <id>`
-- `/mnemospark-cloud op-status --operation-id <id> --cancel`
+- `/mnemospark_cloud upload ... --async --orchestrator subagent`
+- `/mnemospark_cloud download ... --async --orchestrator subagent --timeout-seconds 900`
+- `/mnemospark_cloud op-status --operation-id <id>`
+- `/mnemospark_cloud op-status --operation-id <id> --cancel`
 
 ### 2) Subagent task envelope contract
 
@@ -87,7 +89,7 @@ type MnemosparkSubagentTaskV1 = {
   args: string; // sync command args (no --async)
   timeoutSeconds?: number;
   requestedBy: {
-    pluginCommand: "mnemospark-cloud";
+    pluginCommand: "mnemospark_cloud";
     chatId?: string;
     senderId?: string;
   };
