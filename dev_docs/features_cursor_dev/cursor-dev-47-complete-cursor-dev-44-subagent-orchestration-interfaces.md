@@ -177,7 +177,3 @@ Required keys in each event payload:
   - [ ] Timeout path works and records `timed_out` + `ASYNC_TIMEOUT` semantics.
   - [ ] Tests cover dispatch, success, failure, cancel, and timeout transitions.
   - [ ] Branch from `main`, open PR.
-
-## Task string (optional)
-
-Complete cursor-dev-44 in mnemospark by implementing OpenClaw subagent orchestration for async upload/download, reusing existing SQLite operations lifecycle and JSONL observability. Add explicit orchestration, timeout, and cancel interfaces as defined above; preserve backward compatibility and avoid introducing parallel operation trackers.
