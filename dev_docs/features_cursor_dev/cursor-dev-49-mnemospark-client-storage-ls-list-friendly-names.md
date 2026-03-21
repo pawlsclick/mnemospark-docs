@@ -1,9 +1,9 @@
-# Cursor Dev: Client — Wallet-only `ls`, S3 list, SQLite names + cron + payment columns, `ls -l`-style listing, human-readable sizes
+# Cursor Dev: Client — Wallet-only `ls`, S3 list, SQLite names + cron + payment columns, `ls -l`-style listing, human-readable sizes, copy-friendly presentation
 
 **ID:** cursor-dev-49  
 **Repo:** mnemospark  
 **Date:** 2026-03-21  
-**Revision:** rev 4  
+**Revision:** rev 5  
 **Last commit in repo (when authored):** `2c1d804` — chore: sync release-please manifest to 0.2.2 (#55)  
 
 **Depends on:** **cursor-dev-48** (mnemospark-backend: `/storage/ls` list mode **deployed** or available in the target environment). Do not merge client-only changes that **require** list mode until the backend supports it; alternatively implement **backward-compatible** parsing (handle both single-object and list responses) and gate wallet-only `ls` on detecting list support (not preferred—deploy backend first).
@@ -17,7 +17,7 @@
 ## Order of operations (all repos)
 
 1. **cursor-dev-48 (mnemospark-backend)** — merged, stack **deployed** with list mode on `/storage/ls`.
-2. **This task (cursor-dev-49, mnemospark)** — parser, `cloud-storage.ts`, `proxy.ts` if needed, `cloud-command.ts` user messages, `cloud-datastore.ts` lookup helpers (friendly name, **cron + payment** per object key), `ls` column layout, tests.
+2. **This task (cursor-dev-49, mnemospark)** — parser, `cloud-storage.ts`, `proxy.ts` if needed, `cloud-command.ts` user messages, `cloud-datastore.ts` lookup helpers (friendly name, **cron + payment** per object key), `ls` column layout, **markdown code-block presentation** (§5c), tests.
 3. **mnemospark-docs (optional)** — update [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md) or slash-command help if `ls` examples still say `--object-key` is mandatory.
 
 ---
@@ -67,8 +67,8 @@ Add a helper, e.g. **`findCronAndPaymentForObjectKey(walletAddress: string, obje
 
 ### 5. User-facing output (`cloud-command.ts` or small formatter)
 
-- After any **bucket / disclaimer** lines (see below), render **`ls` output in a GNU `ls -l`-style column layout** — **one line per object**, stable left-to-right columns, **space-padded** so sizes and dates line up when the client lists **multiple** objects (compute column widths from the **full result set** before printing, like a fixed-font table).
-- **Disclaimer:** before the listing, keep a **short** note that **friendly names**, **cron**, and **payment** columns come from the **local SQLite catalog** (S3 list is still authoritative for object keys); values may be **`-`** when unknown.
+- Build the final user-visible string per **§5c** (copy-friendly): **prose outside** the fence, **table inside** one **fenced code block**.
+- Render **`ls` data rows** in a GNU **`ls -l`-style column layout** — **one line per object**, stable left-to-right columns, **space-padded** (compute column widths from the **full result set** after **sorting** per §5c).
 
 ### 5a. `ls -l`-style columns (stat and list `ls`)
 
@@ -84,16 +84,12 @@ Match the **visual habit** of **`ls -l`** for the leading columns, then append *
 6. **S3 mtime:** derived from S3 `last_modified` when present. Use the same **shape** as `ls -l`: **`MMM DD HH:MM`** for “recent” objects and **`MMM DD  YYYY`** (or equivalent fixed width) for older years — pick one rule and document it in code (e.g. same calendar year as “now” → time; else year). Use **UTC** or **local** time but **state which** in a one-line comment. If `last_modified` is missing, use a **fixed-width** placeholder **`         -`** (12 chars) so columns stay aligned.
 7. **Cron id:** `cron_jobs.cron_id` from **§4b**, or a fixed-width **`         -`** (truncate long ids with **`…`** if needed; column width = max width across rows, like other padded fields).
 8. **Next run:** **next fire time** after “now” computed from **`cron_jobs.schedule`** (the stored cron expression). Use a **small, maintained** cron parser dependency **or** an existing project utility if one already exists; document **timezone** (recommend **UTC** for consistency with S3 timestamps). Format as **`MMM DD HH:MM`** (same width rule as §5a.6) or compact **ISO** in a **fixed-width** column. If there is **no** cron row, schedule is **unparseable**, or status is inactive in a way the code treats as “no upcoming run”, show a **fixed-width** **`         -`**. Do **not** show only the raw cron string here — users asked for a **run date**; if next-run computation is impossible for a given expression, show **`?`** in a fixed-width field and log or document the limitation.
-9. **Payment:** from **§4b** `payments.amount` when present: format for readability (e.g. up to **6** decimal places for token amounts, trim trailing zeros; avoid scientific notation). Append **`network`** in parentheses when non-empty, e.g. **`0.5 (base)`**. If no payment row, show **`         -`** (fixed width aligned with column max). Optionally include **`payments.status`** as a short suffix (e.g. **`0.5 (base) settled`**) if it fits column width rules — if too noisy, **amount + network only**.
-10. **Name:** last column, unbounded width. If a friendly name exists: **`Friendly name (object_key)`**; else **`object_key`**. Do not pad the name column; long names may extend past other rows (same as `ls -l` with long filenames).
+9. **Payment:** from **§4b** `payments.amount` when present: format for readability (e.g. up to **6** decimal places for token amounts, trim trailing zeros; avoid scientific notation). Append **`network`** in parentheses when non-empty, e.g. **`0.5 (base)`**. If no payment row, show **`         -`** (fixed width aligned with column max). Optionally include **`payments.status`** as a short suffix (e.g. **`0.5 (base) settled`**) if it fits column width rules — if too noisy, **amount + network only**. Apply **§5c** max width to the **rendered payment cell** (truncate end with **`…`**, keep column width aligned).
+10. **Name:** last column. If a friendly name exists: **`Friendly name (object_key)`**; else **`object_key`**. Do **not** right-pad the name column; apply **§5c** **max width** with **middle ellipsis** (`start … end`) so a single long key does not break copy-paste layouts.
 
 **Single-object (stat) `ls`**
 
 - Emit **one** line in the **same** column layout (synthetic single-row table) so stat and list look consistent.
-
-**Optional first line (list mode only)**
-
-- If useful, print **`total <N>`** on its own line before the rows, where **`<N>`** is the **number of objects** in this response (not disk blocks). If pagination truncates the bucket, append a clear line such as **`... (truncated; more objects in bucket)`** when the backend indicates truncation.
 
 **Tests**
 
@@ -116,6 +112,35 @@ Today `ls` surfaces **`size_bytes`** in a way that is hard to scan. **Change use
 
 - Unit tests for the formatter: `0`, values just below/above 1_000 and 1_000_000, large objects, and typical list rows.
 
+### 5c. Presentation: monospace block, headers, sort, width caps, empty state, copy-friendly layout
+
+**Copy-friendly structure (required)**
+
+- Assemble the returned message so users can **copy the table in one gesture**:
+  - **Outside** the fenced block (plain prose / markdown paragraphs): **disclaimer** (local SQLite for names, cron, payment; **`-`** = unknown locally), **legend** (one short line mapping abbreviations to meanings, e.g. that **`NEXT`** is next cron fire in UTC), **`bucket:`** line with bucket name from the API when available, **`sorted by:`** line stating the rule from below, optional **`total <N>`** for this page, and if the backend reports **truncation**, a line such as **`List truncated; more objects in bucket.`** (and future continuation-token hint if implemented). **Do not** put these lines inside the code fence.
+  - **Inside a single fenced code block:** **header row** (see below) then **data rows** only — no disclaimer, no bucket line. Use a **single** opening/closing triple-backtick pair for the whole table; use plain **` ``` `** (no language tag) or **` ```text `** so hosts render **monospace** and preserve spaces.
+
+**Header row (inside code block, first line)**
+
+- One line of **abbreviated column labels** aligned to the **same column boundaries** as data (pad with spaces). Example tokens (adjust to match §5a): **`PERM`**, **`LN`**, **`USER`**, **`GRP`**, **`SIZE`**, **`S3_TIME`**, **`CRON`**, **`NEXT`**, **`PAY`**, **`NAME`** (or shorter if width-constrained). Document chosen abbreviations in the **legend** outside the block.
+
+**Sort order (before computing column widths)**
+
+- **Default:** sort rows by S3 **`last_modified` descending** (newest first); objects **missing** `last_modified` sort **after** all dated rows, ordered by **`key` ascending**. **Tie-break** by **`key` ascending**. Document in a one-line code comment.
+
+**Width caps (constants, tune in one place)**
+
+- **Name** column displayed text: max **72** characters; if longer, replace the middle with **` … `** while keeping recognizable **prefix and suffix** (ensure `object_key` tail remains visible enough to disambiguate, e.g. at least **8** chars of suffix unless key is shorter).
+- **Payment** column displayed text: max **28** characters; truncate end with **`…`** if needed while keeping the **numeric amount** visible when possible.
+
+**Empty list**
+
+- When **zero** objects: **no** fenced code block. Prose only: clear sentence e.g. **`No objects in this bucket.`** plus **`bucket:`** if known. Still include **disclaimer** if other `ls` modes use it, or a one-line note that the bucket is empty.
+
+**Stat mode (single object)**
+
+- Use the **same** pattern: prose outside (minimal), then **one** code block with **header + one data row** so copy-paste behavior matches list mode.
+
 ### 6. Operations / telemetry
 
 - Prefer **one** `operations` row per `ls` list invocation (`type: "ls"`, metadata or error_message field noting `list_mode: true`) rather than one row per S3 key (avoid SQLite spam).
@@ -128,12 +153,13 @@ Today `ls` surfaces **`size_bytes`** in a way that is hard to scan. **Change use
 - **User message / integration-style tests:** assert `ls` output contains **formatted sizes** (not only raw `size_bytes` integers) for stat and list flows where applicable.
 - Assert **`ls -l`-style layout**: multiple objects produce **aligned** columns; lines include the **10-char** placeholder mode field and **consistent** widths for **size**, **S3 mtime**, **cron**, **next run**, and **payment** columns.
 - **Datastore tests** for **§4b** join (cron + payment by `object_key` / `quote_id` / wallet).
+- **Presentation (§5c):** output contains **one** fenced block wrapping header + rows; **prose** (disclaimer, legend, bucket, sort) appears **outside** the fence; **empty list** has **no** fence; **sort order** verified with fixtures (newest mtime first).
 
 ---
 
 ## Overview
 
-End users run `/mnemospark_cloud ls --wallet-address <addr>` and see **every object key** in their bucket (from S3 via the backend), with **friendly names**, **cron job id**, **next scheduled run** (from the stored cron expression), and **payment amount** (from the linked quote) filled in **best effort** from local SQLite. **All `ls` output** (single-object and list) uses a **GNU `ls -l`-like column layout** (placeholder mode, size, S3 mtime, cron, next run, payment, name) with **human-readable sizes** (B, KB, MB, GB, …) instead of raw byte counts alone.
+End users run `/mnemospark_cloud ls --wallet-address <addr>` and see **every object key** in their bucket (from S3 via the backend), with **friendly names**, **cron job id**, **next scheduled run** (from the stored cron expression), and **payment amount** (from the linked quote) filled in **best effort** from local SQLite. **All `ls` output** (single-object and list) uses a **GNU `ls -l`-like column layout** (placeholder mode, size, S3 mtime, cron, next run, payment, name) with **human-readable sizes** (B, KB, MB, GB, …), **sorted for scanability**, **width-capped** long fields, a **header row**, and a **single monospace markdown code block** for the table so the listing is **easy to copy**; **prose** (disclaimer, legend, bucket, sort rule) stays **outside** that block.
 
 ---
 
@@ -166,7 +192,7 @@ sequenceDiagram
     Cmd->>DS: findCronAndPaymentForObjectKey(wallet, key)
     DS-->>Cmd: cron_id, schedule, payment or nulls
   end
-  Cmd-->>User: ls -l-style lines (+ cron, next run, payment, name)
+  Cmd-->>User: prose + fenced monospace table (header, sorted rows)
 ```
 
 ---
@@ -196,6 +222,10 @@ sequenceDiagram
   - [ ] **User-visible output** shows S3 keys with **best-effort** names, **cron id**, **next run** (from schedule), **payment** column, and a **short disclaimer** about the local catalog.
   - [ ] **`ls` shows human-readable sizes** (B, KB, MB, GB, TB as needed) for **both** stat and list modes via a **shared** `formatBytesForDisplay` (or equivalent), using **decimal** KB/MB/GB; **unit tests** cover edge cases.
   - [ ] **List (and stat) `ls` output matches `ls -l`-style columns** per **§5a** (placeholder mode, links, owner, group, right-aligned size, fixed-width **S3 mtime**, **cron id**, **next run**, **payment**, **name** last).
+  - [ ] **§5c presentation:** **one** markdown **fenced code block** contains **aligned header row + data rows only**; **disclaimer, legend, bucket, sorted-by, total/truncation** lines are **outside** the fence (copy-friendly).
+  - [ ] **Sort** per §5c (**S3 mtime desc**, missing mtime last, tie-break **key asc**).
+  - [ ] **Width caps** for **name** (middle ellipsis) and **payment** (end ellipsis) per §5c.
+  - [ ] **Empty bucket:** prose-only message, **no** empty code fence.
   - [ ] **Tests** updated/added; CI green.
   - [ ] Branch + PR from default branch (follow mnemospark repo policy if documented).
 
@@ -203,4 +233,4 @@ sequenceDiagram
 
 ## Task string (optional)
 
-Work only in **mnemospark**. Read `cursor-dev-49-mnemospark-client-storage-ls-list-friendly-names.md` in mnemospark-docs (raw GitHub URL if needed). **Depends on deployed cursor-dev-48.** Implement wallet-only `ls`: relax `parseObjectSelector` for `ls` only; extend `cloud-storage` types and parsers for list responses; add **`findLatestFriendlyNameForObjectKey`** and **`findCronAndPaymentForObjectKey`** (§4) in `cloud-datastore.ts`; format output as **GNU `ls -l`-style column rows** (§5a) including **cron id**, **next run** from schedule, and **payment amount**; **shared human-readable byte formatting** (§5b); disclaimer before listing; optional `total N` + truncation line; update proxy if needed; fix tests that treat wallet-only `ls` as invalid. Do not change download/delete selector requirements. Acceptance: spec checkboxes.
+Work only in **mnemospark**. Read `cursor-dev-49-mnemospark-client-storage-ls-list-friendly-names.md` in mnemospark-docs (raw GitHub URL if needed). **Depends on deployed cursor-dev-48.** Implement wallet-only `ls`: relax `parseObjectSelector` for `ls` only; extend `cloud-storage` types and parsers for list responses; add **`findLatestFriendlyNameForObjectKey`** and **`findCronAndPaymentForObjectKey`** (§4) in `cloud-datastore.ts`; format output as **GNU `ls -l`-style column rows** (§5a) including **cron id**, **next run** from schedule, and **payment amount**; **shared human-readable byte formatting** (§5b); **§5c** — sort rows, width caps, **header line inside** a **single triple-backtick code block**, **prose** (disclaimer, legend, bucket, sorted-by, total/truncation) **outside** the block; empty list = prose only. Update proxy if needed; fix tests. Do not change download/delete selector requirements. Acceptance: spec checkboxes.
