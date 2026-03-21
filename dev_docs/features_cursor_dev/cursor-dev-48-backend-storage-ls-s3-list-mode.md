@@ -3,7 +3,7 @@
 **ID:** cursor-dev-48  
 **Repo:** mnemospark-backend  
 **Date:** 2026-03-21  
-**Revision:** rev 1  
+**Revision:** rev 2  
 **Last commit in repo (when authored):** `dc0abfb` — fix(iam): allow GetItem on upload transaction log for StorageUpload Lambda  
 
 **Related cursor-dev IDs:** Extends [cursor-dev-05-lambda-storage-ls.md](cursor-dev-05-lambda-storage-ls.md). Client work: **cursor-dev-49** (run **after** this task is merged and deployed).
@@ -20,7 +20,7 @@
    Implement list mode on `/storage/ls`, SAM/API Gateway updates, tests, merge, **deploy** stack (staging then production as you normally do).
 
 2. **cursor-dev-49 — mnemospark**  
-   Client/parser/proxy/storage types and SQLite friendly-name enrichment. Must target an environment where the **deployed** backend exposes list mode (or gate client on API version if you add one).
+   Client/parser/proxy/storage types, SQLite friendly-name enrichment, and **human-readable file sizes** in `ls` output. Must target an environment where the **deployed** backend exposes list mode (or gate client on API version if you add one).
 
 3. **Docs (optional same PR as 49 or follow-up)**  
    If product/workflow docs in **mnemospark-docs** describe `ls` as requiring `--object-key`, update them after client ships.
@@ -49,6 +49,7 @@ Add an **S3-authoritative listing mode** to the existing **StorageLs** Lambda (`
 - Use boto3 `list_objects_v2`. Per AWS documentation, callers need **READ access to the bucket** and the **`s3:ListBucket`** permission for the `ListObjectsV2` API ([Boto3 `list_objects_v2`](https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/list_objects_v2.html)).
 - Map S3 `Contents` entries to your response items; omit or handle `Contents` missing (empty bucket).
 - Do **not** add friendly names in the Lambda; naming is **client-side best effort** (cursor-dev-49).
+- Keep **`size_bytes` as a non-negative integer** in all JSON responses (stat and list items). Do **not** add parallel string fields such as `size_human` on the API; **human-readable KB/MB/GB** formatting is **cursor-dev-49** (mnemospark client) only.
 
 **SAM / `template.yaml`**
 
