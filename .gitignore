@@ -7,6 +7,15 @@ scripts/
 .env
 .env.*
 env.json
+.security/
+.security.*
+.security.*.*
+.security.*.*.*
+.security.*.*.*.*
+.security.*.*.*.*.*
+.security.*.*.*.*.*.*
+.security.*.*.*.*.*.*.*
+.security.*.*.*.*.*.*.*.*
 
 # Python artifacts (docs tooling)
 __pycache__/
