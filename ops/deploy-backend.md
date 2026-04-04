@@ -1,9 +1,11 @@
 # Deployment Runbook (Stage -> Prod)
 
+Before treating **prod** as ready for cutover, complete the **staging-first parameterization** in `mnemospark-backend` (template parameters + GitHub variables for addresses, RPC URL, settlement mode, relayer secret id—no workflow literals). See **`ops/deploy-backend-prod.md`** (prerequisite + instructions + agent prompt).
+
 ## Prerequisites
 - GitHub Environments:
   - `staging` (auto)
-  - `production` (required reviewers)
+  - `prod` (required reviewers; used by **Promote to Production**)
 - GitHub secrets:
   - `AWS_ROLE_ARN_STAGING`
   - `AWS_ROLE_ARN_PROD`
@@ -41,15 +43,15 @@ You do **not** need to change or delete the existing CloudFormation stack before
 4. **Verify staging**  
    Check the workflow run in GitHub Actions. Optionally hit the staging API or review CloudWatch logs for the updated Lambdas to confirm behavior.
 
-5. **Promote to production (when ready)**  
-   Trigger the **Promote to Production** workflow manually. Production deploy requires environment approval.
+5. **Promote to prod (when you are ready)**  
+   **Prod does not deploy when staging deploys.** Trigger **Promote to Production** manually with the commit SHA you validated in staging. Approve the GitHub **`prod`** environment if required reviewers are configured.
 
 ## Standard flow (summary)
 1. Merge PR to `main`
-2. `Deploy Staging` runs automatically (updates existing `mnemospark-staging` stack)
-3. `Security Post Deploy` runs (Trivy, Checkov, ZAP)
-4. Trigger `Promote to Production` manually
-5. Production deploy requires environment approval
+2. `Deploy Staging` runs automatically (updates **`mnemospark-staging` only**)
+3. `Security Post Deploy` runs (Trivy, Checkov, ZAP)—does **not** update prod
+4. When satisfied with staging, trigger `Promote to Production` manually (prod **never** auto-updates from staging)
+5. Prod deploy uses GitHub environment **`prod`**; approval if configured
 
 ## Rollback
 If a staging deploy fails or introduces issues: use CloudFormation stack history for **mnemospark-staging** to redeploy a previous known-good template/artifact, then re-run smoke tests. Do not delete the stack unless you are doing a full teardown; normal updates are in-place.

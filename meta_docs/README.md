@@ -12,12 +12,14 @@ The `meta_docs/` directory holds **runtime behavior and flow-level specs** for t
   - `cloud-help-process-flow.md`
   - `wallet-and-export-process-flow.md`
 - Cross-cutting behavior specs:
+  - `cloud-async-orchestrator-modes.md` (`async:true` — `orchestrator:inline` vs `orchestrator:subagent`, timeouts, cancellation)
   - `wallet-proof.md` (wallet proof / `X-Wallet-Signature`)
   - `payment-authorization-eip712-trace.md` (x402 payment header and backend expectations)
   - `backend-api-base-url.md` (how the proxy finds the backend)
   - `backend-logs.md` (where to look in CloudWatch)
   - Troubleshooting (`troubleshoot-price-storage-flow.md`)
 - Identifier/reference docs:
+  - `ethereum-wallet-generation.md` (viem: how EVM wallet keys are generated on the client)
   - `cron-id-usage.md` (`<cron-id>` for storage payment jobs)
   - `quote-id-dynamodb.md` (`quote_id` in the quotes table)
   - `trans-id-payment-settement.md` (`trans_id` from payment settlement)
