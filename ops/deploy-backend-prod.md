@@ -1,13 +1,15 @@
 # mnemospark-backend — prod stack bootstrap
 
 Date: 2026-04-04  
-Revision: rev 5  
+Revision: rev 7  
 Milestone: prod-bootstrap (pre-`mnemospark-prod` stack)  
-Repos / components: **mnemospark-backend** (SAM / CloudFormation, GitHub Actions), AWS account **929837999468**, **us-east-1**; DNS (Porkbun).
+Repos / components: **mnemospark-backend** (SAM / CloudFormation, GitHub Actions), AWS (your account), **us-east-1** (or the region you use); DNS (Porkbun).
 
 ## Overview
 
-Staging is already live as CloudFormation stack **`mnemospark-staging`** (example ARN: `arn:aws:cloudformation:us-east-1:929837999468:stack/mnemospark-staging/b929c250-1809-11f1-b860-125d0bd2cfa5`). This guide is the **ordered runbook** to stand up **`mnemospark-prod`**, wire the GitHub **`prod`** environment (the exact environment name used in `promote-prod.yml`), and use **Promote to Production** to update prod **only when you choose**.
+Staging is typically deployed as CloudFormation stack **`mnemospark-staging`** (see **`samconfig.staging.toml`** in **mnemospark-backend**). That stack includes **regional AWS WAFv2** on the public **REST** API stage (`MnemosparkBackendApi`) when the root SAM template defines it—see **AWS WAF (regional, REST API)**. Prod will get the **same template resources** under **`mnemospark-prod`** when you promote (separate Web ACL and association, not shared with staging).
+
+This guide is the **ordered runbook** to stand up **`mnemospark-prod`**, wire the GitHub **`prod`** environment (the exact environment name used in `promote-prod.yml`), and use **Promote to Production** to update prod **only when you choose**.
 
 Reference stack config in the backend repo: `samconfig.prod.toml` (`stack_name = "mnemospark-prod"`).
 
@@ -39,11 +41,12 @@ Follow this order so credentials, secrets, and GitHub configuration exist before
 | 3 | **AWS Secrets Manager (prod-specific)** | Create prod secrets (dashboard GraphQL key, relayer private key) and use **distinct** secret names/ARNs via the **new** template parameters—no sharing unless intentional. |
 | 4 | **GitHub `prod` secrets and variables** | Mirror the **same variable keys** as staging for each new parameter (different values for prod). Ensure `DASHBOARD_GRAPHQL_API_KEY_SECRET_ARN` and any relayer-secret parameter inputs are set. |
 | 5 | **Keep deploy paths aligned** | **`PaymentSettlementMode`** and **`BaseRpcUrl`** are set **explicitly** in both **`deploy-staging.yml`** and **`promote-prod.yml`** (same values: `onchain`, `https://mainnet.base.org`). After the prerequisite refactor, move those literals to GitHub **Variables** in **both** workflows together so keys still match. |
-| 6 | **First `mnemospark-prod` deploy** | Via **Promote to Production** (recommended) or one-time `sam deploy --config-file samconfig.prod.toml` with correct `--parameter-overrides`. |
-| 7 | **Obtain prod REST API invoke URL** | From **API Gateway** (`MnemosparkBackendApi` / `AWS::ApiGateway::RestApi`): `https://{rest-api-id}.execute-api.{region}.amazonaws.com/prod`. Needed for **`PROD_BASE_URL`** (smoke tests) and as the **target** for Porkbun until a custom domain fronts the API. |
-| 8 | **Porkbun: `api.mnemospark.ai` → prod** | Point the hostname at prod so **mnemospark clients use the stable DNS name**, not the raw `execute-api` URL—see **Porkbun DNS**. |
-| 9 | **Fund prod relayer wallet (Base)** | On-chain settlement needs gas on the address the stack uses for monitoring and (via secret) signing. |
-| 10 | **Ongoing: merge → validate staging → promote when ready** | Push to `main` deploys **staging only**. After you are satisfied with staging, manually run **Promote to Production** with that commit’s SHA; **prod does not auto-update** with staging. |
+| 6 | **First `mnemospark-prod` deploy** | Via **Promote to Production** (recommended) or one-time `sam deploy --config-file samconfig.prod.toml` with correct `--parameter-overrides`. The same template creates **`MnemosparkBackendApiWebAcl`** + **`MnemosparkBackendApiWebAclAssociation`** for prod (new ACL, not the staging one). |
+| 7 | **Verify prod WAF** | In **CloudFormation** → **`mnemospark-prod`** → outputs: **`MnemosparkBackendApiWebAclArn`**. In **WAF** → Web ACLs (Regional), confirm association to the **prod** REST API stage. See **AWS WAF (regional, REST API)**. |
+| 8 | **Obtain prod REST API invoke URL** | From **API Gateway** (`MnemosparkBackendApi` / `AWS::ApiGateway::RestApi`): `https://{rest-api-id}.execute-api.{region}.amazonaws.com/prod`. Needed for **`PROD_BASE_URL`** (smoke tests) and as the **target** for Porkbun until a custom domain fronts the API. |
+| 9 | **Porkbun: `api.mnemospark.ai` → prod** | Point the hostname at prod so **mnemospark clients use the stable DNS name**, not the raw `execute-api` URL—see **Porkbun DNS**. Traffic still hits the **same REST stage** protected by **regional WAF** when the domain maps to that API. |
+| 10 | **Fund prod relayer wallet (Base)** | On-chain settlement needs gas on the address the stack uses for monitoring and (via secret) signing. |
+| 11 | **Ongoing: merge → validate staging → promote when ready** | Push to `main` deploys **staging only**. After you are satisfied with staging, manually run **Promote to Production** with that commit’s SHA; **prod does not auto-update** with staging. |
 
 ## Instructions: staging template and workflow refactor
 
@@ -67,7 +70,7 @@ Complete these in **mnemospark-backend** (PR → merge → confirm **Deploy Stag
    Set placeholders in `samconfig.staging.toml` / `samconfig.prod.toml` for any parameters you expect to pass from the CLI for emergency deploys.
 
 6. **Deploy and verify staging**  
-   Merge to `main`, let **Deploy Staging** run, then smoke-test and check CloudWatch / on-chain behavior. If CloudFormation **replacement** is required for a resource, treat it as a planned change (review change set).
+   Merge to `main`, let **Deploy Staging** run, then smoke-test and check CloudWatch / on-chain behavior. If the template includes **WAF**, confirm stack output **`MnemosparkBackendApiWebAclArn`** and regional association to the **staging** REST stage. If CloudFormation **replacement** is required for a resource, treat it as a planned change (review change set).
 
 7. **Update Promote to Production**  
    Keep **`promote-prod.yml`** `--parameter-overrides` **keys** in lockstep with **Deploy Staging**. Today both already include **`PaymentSettlementMode`** and **`BaseRpcUrl`**; when you parameterize, add the same new keys here and read values from the **`prod`** GitHub environment variables.
@@ -165,8 +168,8 @@ After the prerequisite refactor, add nodes (or treat `VarDash` as representative
 
 | Workflow | File | Trigger | AWS role secret | Notes |
 |----------|------|---------|-----------------|-------|
-| Deploy Staging | `.github/workflows/deploy-staging.yml` | Push to `main`, or `workflow_dispatch` | `AWS_ROLE_ARN_STAGING` | Updates **staging only**. **Target:** all environment-specific SAM parameters come from GitHub **`staging`** variables (no literals in YAML). **Never** deploys prod. |
-| Promote to Production | `.github/workflows/promote-prod.yml` | **`workflow_dispatch`** only; **required input: `sha`** | `AWS_ROLE_ARN_PROD` | GitHub environment **`prod`**. Passes **`PaymentSettlementMode=onchain`**, **`BaseRpcUrl=https://mainnet.base.org`**, dashboard secret ARN, price vars—**same chain parameters as Deploy Staging**. **After refactor:** same keys, values from **`prod`** vars. |
+| Deploy Staging | `.github/workflows/deploy-staging.yml` | Push to `main`, or `workflow_dispatch` | `AWS_ROLE_ARN_STAGING` | Updates **staging only** (stack e.g. **`mnemospark-staging`**). Template can include **regional WAFv2** on **`MnemosparkBackendApi`**; deploy role needs **WAFv2** IAM. **Target:** env-specific SAM parameters from GitHub **`staging`** variables. **Never** deploys prod. |
+| Promote to Production | `.github/workflows/promote-prod.yml` | **`workflow_dispatch`** only; **required input: `sha`** | `AWS_ROLE_ARN_PROD` | GitHub environment **`prod`**. Same template as staging → creates **prod** **WAF** + association; **prod** deploy role must allow **WAFv2** like staging. Passes **`PaymentSettlementMode`**, **`BaseRpcUrl`**, dashboard secret ARN, price vars. **After refactor:** same keys, values from **`prod`** vars. |
 | Security Post Deploy | `.github/workflows/security-post-deploy.yml` | After staging deploy, schedule, or manual | _(none — repo scan + optional ZAP)_ | ZAP uses **`ZAP_TARGET_URL_STAGING`** only today. |
 
 **On-demand prod updates:** In GitHub → **Actions** → **Promote to Production** → **Run workflow**. Enter the **full commit SHA** you validated in staging—typically the `main` commit after **Deploy Staging** succeeded. Approve the **`prod`** environment if configured with required reviewers. Prod **does not** deploy when staging deploys; only this manual workflow updates **`mnemospark-prod`**.
@@ -221,6 +224,25 @@ The SAM template exposes **`DashboardGraphQLHttpApiUrl`** as a stack output, but
 
 Use that invoke URL for **`PROD_BASE_URL`** in GitHub **until** `https://api.mnemospark.ai` resolves and reaches the same API; then set **`PROD_BASE_URL`** to the **custom URL** so **`scripts/smoke.sh`** matches what clients use. **`MNEMOSPARK_BACKEND_API_BASE_URL`** (and similar client config) for **prod** should be the **Porkbun hostname**, not the raw API Gateway URL.
 
+## AWS WAF (regional, REST API)
+
+**Source of truth in repo:** Root **`template.yaml`** in **mnemospark-backend** (not the optional nested stack under `infrastructure/waf/` unless you deliberately use that alternate layout). The SAM stack that backs **`mnemospark-staging`** and future **`mnemospark-prod`** includes:
+
+| Resource | Purpose |
+|----------|---------|
+| **`MnemosparkBackendApiWebAcl`** | **REGIONAL** WAFv2 web ACL, name pattern `${StackName}-rest-api-waf`. **Default action:** allow. **Managed rule groups:** `AWSManagedRulesCommonRuleSet`, `AWSManagedRulesKnownBadInputsRuleSet` (both with override “none”—rules apply as AWS defines). **CloudWatch metrics / sampled requests** enabled per rule. |
+| **`MnemosparkBackendApiWebAclAssociation`** | Associates the ACL with the **API Gateway REST API stage** for **`MnemosparkBackendApi`** (`ResourceArn` … `/restapis/{RestApiId}/stages/{StageName}`). Depends on **`MnemosparkBackendApiStage`**. |
+
+**Stack output:** **`MnemosparkBackendApiWebAclArn`** — use it for audits, support tickets, or attaching additional tooling.
+
+**Staging vs prod:** Each stack gets its **own** Web ACL and association. **Do not** point prod DNS or clients at staging’s API if you expect prod isolation; WAF configuration is **per stack** but **same rule shape** as long as both deploy from the same template revision.
+
+**Dashboard GraphQL HTTP API:** The association above targets the **REST** API (`MnemosparkBackendApi`). The internal **HTTP API** used for dashboard GraphQL is **not** covered by this association unless you add a separate WAF resource and association in the template.
+
+**Deploy IAM:** The prod (and staging) **OIDC deploy role** must allow **WAFv2** create/associate/update and **API Gateway** WebACL wiring where required. See **`docs/iam-mnemospark-deploy-policy.json`** in **mnemospark-backend** (`Sid`: **`WAFv2`** and related API Gateway actions). If promote fails on WAF, extend the prod deploy policy to match that file, then retry.
+
+**Operations:** After rule updates or false positives, use **WAF** console (sampled requests, metrics), **CloudWatch**, and managed-rule **tuning** (e.g. scope-down statements) in the template or console—then redeploy or change the Web ACL as your process allows.
+
 ## Wallet / relayer operations (prod)
 
 ### Target (after **Prerequisite: parameterize staging**)
@@ -255,11 +277,11 @@ The template may still use a **literal** relayer secret id and **fixed** IAM pat
 
 **Order:** Create or update after the **first prod deploy** when you know the invoke URL or custom-domain target.
 
-API Gateway **custom domain** (API Gateway-owned cert, base path mapping) vs **CNAME to execute-api** vs **CloudFront in front** is an architecture choice; this doc only requires that **prod clients** end up on **`https://api.mnemospark.ai`**, not on the raw RestApi URL.
+API Gateway **custom domain** (API Gateway-owned cert, base path mapping) vs **CNAME to execute-api** vs **CloudFront in front** is an architecture choice; this doc only requires that **prod clients** end up on **`https://api.mnemospark.ai`**, not on the raw RestApi URL. If the custom domain maps to the **same** `MnemosparkBackendApi` stage, **regional WAF** still applies to that traffic.
 
 ## IAM and deploy policy
 
-Apply the same **deploy policy** pattern as staging (see backend **`docs/iam-mnemospark-deploy-policy.json`** and **`docs/base-relayer-monitoring.md`** for SNS and other statements) to the **prod** role. Prod and staging roles are typically **two roles** with the same JSON policy shape, different ARNs.
+Apply the same **deploy policy** pattern as staging (see backend **`docs/iam-mnemospark-deploy-policy.json`** and **`docs/base-relayer-monitoring.md`** for SNS and other statements) to the **prod** role. Prod and staging roles are typically **two roles** with the same JSON policy shape, different ARNs. Ensure the policy includes **WAFv2** (and API Gateway Web ACL) statements so **`MnemosparkBackendApiWebAcl`** and **`MnemosparkBackendApiWebAclAssociation`** can be created and updated on promote—see **AWS WAF (regional, REST API)**.
 
 ## What an agent can do automatically vs what you must do manually
 
@@ -270,7 +292,7 @@ Typical agent-safe tasks:
 - Read and summarize **`promote-prod.yml`**, **`deploy-staging.yml`**, **`samconfig.prod.toml`**, **`template.yaml`** parameters/outputs.
 - Compare staging vs prod **parameter-overrides** and flag any **remaining** gaps after chain parity (e.g. relayer / wallet parameters once you parameterize the template).
 - Implement or review the **prerequisite parameterization** PR (`template.yaml`, staging workflow, then **`promote-prod.yml`** parity).
-- Run **read-only** AWS CLI checks after credentials are available: `aws cloudformation describe-stacks --stack-name mnemospark-prod`, list outputs, API Gateway IDs.
+- Run **read-only** AWS CLI checks after credentials are available: `aws cloudformation describe-stacks --stack-name mnemospark-prod`, list outputs (including **`MnemosparkBackendApiWebAclArn`**), API Gateway IDs, and **`aws wafv2 list-web-acls --scope REGIONAL`** as needed.
 - Propose exact **GitHub variable** values (non-secret) once URLs are known.
 
 Agents should **not** create or paste **private keys** into tickets or CI; relayer key material belongs in **Secrets Manager** via your own secure process.
@@ -284,6 +306,7 @@ Agents should **not** create or paste **private keys** into tickets or CI; relay
 - **Porkbun:** point **`api.mnemospark.ai`** at prod so clients use that hostname; staging stays on the **AWS-generated** API URL.
 - **Approve** the GitHub **`prod`** environment deployment when promoting.
 - **Run workflow_dispatch** for **Promote to Production** with the correct **SHA**.
+- After first prod deploy: confirm **regional WAF** is associated to the **prod** REST stage (output **`MnemosparkBackendApiWebAclArn`**); tune rules if legitimate clients are blocked.
 
 ## Prompt to give an agent to produce an execution plan
 
@@ -292,14 +315,14 @@ Use this when you want a planning pass (checklist, diffs, and ordered tasks) wit
 ```text
 You are working across repos mnemospark-backend and mnemospark-docs.
 
-Goal: Produce a step-by-step execution plan to bootstrap the mnemospark-prod CloudFormation stack in AWS account 929837999468 / us-east-1, mirroring mnemospark-staging, with GitHub Environment named "prod" (not "production") and manual on-demand promotes via .github/workflows/promote-prod.yml. Prod must never auto-deploy when staging updates.
+Goal: Produce a step-by-step execution plan to bootstrap the mnemospark-prod CloudFormation stack in your AWS account and region (e.g. us-east-1), mirroring mnemospark-staging, with GitHub Environment named "prod" (not "production") and manual on-demand promotes via .github/workflows/promote-prod.yml. Prod must never auto-deploy when staging updates.
 
 Constraints and inputs:
-- Staging stack ARN reference: arn:aws:cloudformation:us-east-1:929837999468:stack/mnemospark-staging/b929c250-1809-11f1-b860-125d0bd2cfa5
+- Staging stack name: mnemospark-staging (per samconfig.staging.toml); use your account and region when running AWS CLI or console steps.
 - Read mnemospark-docs/ops/deploy-backend-prod.md and treat it as the ordered runbook. Assume **Step 0** is either complete or explicitly in scope: template + workflows parameterized so addresses, RPC URL, settlement mode, and relayer **secret id** are CloudFormation parameters fed from GitHub Environment variables.
 - In mnemospark-backend, compare deploy-staging.yml vs promote-prod.yml: **PaymentSettlementMode** and **BaseRpcUrl** are already aligned; list any **remaining** key mismatches (wallet / relayer params) after the parameterization refactor.
 - If the refactor is not merged yet, call out remaining hardcoding (template defaults, literal MNEMOSPARK_RELAYER_SECRET_ID, workflow literals for RPC/mode once moved to vars) and prioritize the prerequisite PR for full per-env control.
-- Separate the plan into: (A) Prerequisite / parameterization status, (B) AWS IAM/OIDC + roles, (C) Secrets Manager, (D) GitHub prod env secrets/vars (mirroring staging var keys), (E) first deploy and verification commands, (F) Porkbun `api.mnemospark.ai` for **prod** client URLs (staging clients use **execute-api** URL only), (G) ongoing manual promote process with SHA discipline (staging auto, prod manual only).
+- Separate the plan into: (A) Prerequisite / parameterization status, (B) AWS IAM/OIDC + roles (include **WAFv2** + API Gateway Web ACL per `docs/iam-mnemospark-deploy-policy.json`), (C) Secrets Manager, (D) GitHub prod env secrets/vars (mirroring staging var keys), (E) first deploy and verification (stack output **`MnemosparkBackendApiWebAclArn`**, WAF association on prod REST stage), (F) Porkbun `api.mnemospark.ai` for **prod** client URLs (staging clients use **execute-api** URL only; WAF still applies to REST stage), (G) ongoing manual promote process with SHA discipline (staging auto, prod manual only).
 - For each step, label it Manual vs Agent-assistable (read-only CLI / PR draft).
 
 Output: numbered order of operations, then a PR-style checklist for GitHub and AWS consoles, then optional patch proposals for workflow parity.
@@ -310,5 +333,5 @@ Output: numbered order of operations, then a PR-style checklist for GitHub and A
 - This doc: `mnemospark-docs/ops/deploy-backend-prod.md` — [raw GitHub URL](https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/ops/deploy-backend-prod.md)
 - Related ops runbook: `mnemospark-docs/ops/deploy-backend.md` — [raw URL](https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/ops/deploy-backend.md)
 - Meta-doc conventions: `mnemospark-docs/meta_docs/README.md` — [raw URL](https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/README.md)
-- Backend (in mnemospark-backend repo): `docs/deploy-staging.md`, `docs/deploy.md`, `docs/iam-mnemospark-deploy-policy.json`, `docs/base-relayer-monitoring.md`, `docs/price-storage.md`
+- Backend (in mnemospark-backend repo): `template.yaml` ( **`MnemosparkBackendApiWebAcl`**, **`MnemosparkBackendApiWebAclAssociation`**, output **`MnemosparkBackendApiWebAclArn`** ), `docs/deploy-staging.md`, `docs/deploy.md`, `docs/iam-mnemospark-deploy-policy.json` (WAFv2), `docs/base-relayer-monitoring.md`, `docs/price-storage.md`; optional reference `infrastructure/waf/README.md` for a standalone-WAF pattern (root template embeds WAF for the main stack).
 - Wallet generation reference (client-side): `mnemospark-docs/meta_docs/ethereum-wallet-generation.md` — [raw URL](https://raw.githubusercontent.com/pawlsclick/mnemospark-docs/refs/heads/main/meta_docs/ethereum-wallet-generation.md)
