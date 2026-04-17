@@ -10,23 +10,25 @@ Small, single-run feature specs for [Cursor Cloud Agents](https://cursor.com/doc
 
 1. Pick a feature file below (or from the list in this directory).
 2. Start a **Cloud Agent** (Cloud dropdown in the agent input, or [cursor.com/agents](https://cursor.com/agents)).
-3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from any repo, reference the feature spec path in the **mnemospark-docs** repo (e.g. `dev_docs/features/cursor-dev-auth-01-lambda-authorizer.md`).
+3. Paste the **task string** from the feature file (or point the agent at the file) so it knows scope and acceptance criteria. When the agent runs from any repo, reference the feature spec path in the **mnemospark-docs** repo (e.g. `dev_docs/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
 4. The agent works on a **separate branch** and pushes for handoff; verify via "Checkout Branch" or "Open VM" as needed.
 
 ---
 
 ## Repo mapping (where to run the Cloud Agent)
 
-- **Backend features (01–10, 15–18, 23, 28, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo, and also open the **mnemospark-docs** repo for the corresponding feature spec under `dev_docs/features/`.
-- **Client features (11–14, 20, 22, 26, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
+- **Backend features (01–10, 15–18, 23, 28, 50, auth-01–auth-04):** Start the Cloud Agent from the **mnemospark-backend** repo, and also open the **mnemospark-docs** repo for the corresponding feature spec under `dev_docs/features_cursor_dev/`.
+- **Client features (11–14, 20, 22, 26, 52, auth-05–auth-07):** Start the Cloud Agent from the **mnemospark** repo.
+- **Website / infra in mnemospark-website (51):** Start the Cloud Agent from the **mnemospark-website** repo; spec lives in **mnemospark-docs** `dev_docs/features_cursor_dev/`.
 - **Docs-only features (19, 21, 27):** Start the Cloud Agent from the **mnemospark-docs** repo. No submodule; edit files directly in this repo.
 
 The agent must work **only in the repo it was started in**. Do **not** open, clone, or require access to BlockRun/ClawRouter, OpenRouter, or any other repository.
 
 | Features                      | Repo to run agent from | Notes                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01–10, 15–18, 23, 28, 48, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md). 23 = verify object_key only. **48** = `/storage/ls` S3 list mode. |
-| 11–14, 20, 22, 26, 49, auth-05–auth-07   | **mnemospark**         | Plugin/client. 20 = upload/delete workflow (cron job + cron-id). 22 = client/proxy object-key terminology. **49** = wallet-only `ls` + friendly names (after **48** deployed).                                                                                                                                                                                                                                                                                                                   |
+| 01–10, 15–18, 23, 28, 48, 50, auth-01–auth-04 | **mnemospark-backend** | Submodule init (see above). Backend infra (08, 15–17) per [infrastructure_design/internet_facing_API.md](../infrastructure_design/internet_facing_API.md). Secrets (18): [infrastructure_design/secrets_management.md](../infrastructure_design/secrets_management.md). Auth: [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md). 23 = verify object_key only. **48** = `/storage/ls` S3 list mode. **50** = `ls-web` session BFF (list + multi-download presign, no web delete). |
+| 11–14, 20, 22, 26, 49, 52, auth-05–auth-07   | **mnemospark**         | Plugin/client. 20 = upload/delete workflow (cron job + cron-id). 22 = client/proxy object-key terminology. **49** = wallet-only `ls` + friendly names (after **48** deployed). **52** = `cloud ls-web` (ls output + app URL; depends on **50** + **51**).                                                                                                                                                                                                                                                                                                                   |
+| 51                                        | **mnemospark-website** | **`app.mnemospark.ai`**: standalone `website-app.yaml`, `app/` shell, `deploy-app.yml` (no marketing stack changes). Depends on contract with **50**.                                                                                                                                                                                                                                                                                                                                                      |
 | 19, 21, 27                            | **mnemospark-docs**    | 19 = workflow doc and meta_docs (upload/delete order, cron-id). 21 = docs object-key terminology (replace s3-key). No code; markdown only.                                                                                                                                                                                                                                                                                   |
 
 **mnemospark proxy port:** For client features (11–14), the mnemospark proxy listens on **port 7120** by default. Agents and config should use `http://127.0.0.1:7120` when talking to the proxy (configurable via `MNEMOSPARK_PROXY_PORT`).
@@ -51,7 +53,7 @@ Each feature file includes:
 
 ## Path to feature files when running from a code repo
 
-Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features/`. When running a Cloud Agent from `mnemospark` or `mnemospark-backend`, also open `mnemospark-docs` and reference the feature path there (e.g. `dev_docs/features/cursor-dev-auth-01-lambda-authorizer.md`).
+Feature specs live in the **mnemospark-docs** repo under **`dev_docs/features_cursor_dev/`** (and some older paths under `dev_docs/features/`). When running a Cloud Agent from `mnemospark`, `mnemospark-backend`, or `mnemospark-website`, also open `mnemospark-docs` and reference the feature path there (e.g. `dev_docs/features_cursor_dev/cursor-dev-auth-01-lambda-authorizer.md`).
 
 ---
 
@@ -74,6 +76,7 @@ Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features
 - **21, 22, 23 (object-key terminology):** Can run in any order. 21 = docs (mnemospark-docs). 22 = client/proxy (mnemospark). 23 = backend verification (mnemospark-backend; no changes expected).
 - **26, 27, 28 (mnemospark command structure):** 26 = mnemospark (client: /mnemospark_wallet, /mnemospark_cloud and subcommands, MNEMOSPARK_WALLET_KEY, resolution order). 27 = mnemospark-docs (docs and test scripts — workflow doc client commands, wallet/cloud/env naming). 28 = mnemospark-backend (verify no breakage, update doc refs to /mnemospark_wallet and /mnemospark_cloud). 27 and 28 depend on 26.
 - **48, 49 (storage ls — S3 list + friendly names):** 48 = mnemospark-backend (`/storage/ls` list mode via `ListObjectsV2`, optional `object_key`). 49 = mnemospark (wallet-only `ls`, parse list response, SQLite friendly-name enrichment). **49 depends on 48** being merged and **deployed** before client relies on list mode.
+- **50, 51, 52 (`ls-web`):** **50** = mnemospark-backend (session mint/exchange, list + batch presign download, 6h TTL, CORS `https://app.mnemospark.ai`, no web delete). **51** = mnemospark-website (`app/` + `website-app.yaml` + `deploy-app.yml`, standalone from marketing). **52** = mnemospark (`cloud ls-web`). **50** and **51** can proceed in parallel once API/CORS/cookie paths are agreed; **52** after **50** (and preferably **51** hostname live).
 
 ---
 
@@ -116,3 +119,6 @@ Feature specs live only in the **mnemospark-docs** repo under `dev_docs/features
 | 28      | [cursor-dev-28-backend-verify-wallet-migration.md](cursor-dev-28-backend-verify-wallet-migration.md)   | Backend: verify command-structure migration does not break APIs (depends on 26) |
 | 48      | [cursor-dev-48-backend-storage-ls-s3-list-mode.md](cursor-dev-48-backend-storage-ls-s3-list-mode.md) | Backend: `/storage/ls` S3 list mode (`object_key` optional); extends 05        |
 | 49      | [cursor-dev-49-mnemospark-client-storage-ls-list-friendly-names.md](cursor-dev-49-mnemospark-client-storage-ls-list-friendly-names.md) | Client: wallet-only `ls`, list, SQLite cron/payment, `ls -l` + code block, sort, human sizes (depends on 48) |
+| 50      | [cursor-dev-50-backend-cloud-ls-web-session-and-bff.md](cursor-dev-50-backend-cloud-ls-web-session-and-bff.md) | Backend: `ls-web` session mint/exchange, list, batch presign download; 6h TTL; CORS; no web delete |
+| 51      | [cursor-dev-51-website-cloud-ls-web-shell-and-assets.md](cursor-dev-51-website-cloud-ls-web-shell-and-assets.md) | Website: `app.mnemospark.ai` shell, `website-app.yaml`, `deploy-app.yml`, checkboxes + multi-download |
+| 52      | [cursor-dev-52-client-cloud-ls-web-command.md](cursor-dev-52-client-cloud-ls-web-command.md) | Client: `/mnemospark cloud ls-web` — same output as `ls` + app URL + expiry (depends on 50, 51) |
