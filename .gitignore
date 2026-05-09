@@ -4,7 +4,11 @@
 !.cursor/rules/
 !.cursor/rules/**
 .DS_Store
-scripts/
+
+# Local scripts under scripts/ stay ignored unless explicitly allowed below.
+scripts/*
+!scripts/README.md
+!scripts/test_mnemospark_lite_upload.py
 
 # Env / secrets
 .env
