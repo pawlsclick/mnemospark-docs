@@ -1,5 +1,8 @@
 # IDE / editor
-.cursor/
+# Cursor: ignore local/editor state; commit shared rules under .cursor/rules/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .DS_Store
 scripts/
 
