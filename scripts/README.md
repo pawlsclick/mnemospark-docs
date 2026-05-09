@@ -1,28 +1,82 @@
 # Scripts
 
-## `test_mnemospark_lite_upload.py`
+## update-company-submodules.sh
 
-End-to-end check against a deployed mnemospark-lite upload API: 402 → x402 payment → presigned PUT → complete → list/detail.
+Legacy helper script for the old `.company` Git submodules. mnemospark and mnemospark-backend no longer embed this repo as a submodule; instead, contributors work directly in **mnemospark-docs**.
 
-### Requirements
-
-Python 3.11+ recommended. Install the same x402 / eth tooling you use for lite upload development (for example, align versions with `mnemospark-backend`):
+The script is now a **no-op** and exists only to document the previous workflow. To work with docs, simply clone or pull this repo:
 
 ```bash
-pip install eth-account x402
+git clone git@github.com:pawlsclick/mnemospark-docs.git
+cd mnemospark-docs
+git pull
 ```
 
-### Environment
+## Product docs
+
+High-level product, workflow, and API specifications live under `product_docs/` in this repo:
+
+- [mnemospark_product_spec_v3.md](../product_docs/mnemospark_product_spec_v3.md)
+- [mnemospark_PRD.md](../product_docs/mnemospark_PRD.md)
+- [mnemospark_full_workflow.md](../product_docs/mnemospark_full_workflow.md)
+- [mnemospark_backend_api_spec.md](../product_docs/mnemospark_backend_api_spec.md)
+- [auth_no_api_key_wallet_proof_spec.md](../product_docs/auth_no_api_key_wallet_proof_spec.md)
+- [wallet_gen_payment_eip712.md](../product_docs/wallet_gen_payment_eip712.md)
+- [install_guidelines.md](../product_docs/install_guidelines.md)
+
+Use these docs as the canonical reference when writing or reviewing scripts, fixing Bugbot suggestions, or coordinating feature work across repos.
+
+## list-merged-pr-bugbot-candidates.sh
+
+Lists **merged** PRs in the given repo and prints only those that have comments from Cursor Bugbot (author or "Fix in Cursor" / "Fix in Web" / "@cursor push" in the body). Use this to find merged PRs that may still have suggested fixes to apply to `main`.
+
+**Requires:** `gh` (GitHub CLI), `jq`, and `gh auth login`.
+
+```bash
+REPO=pawlsclick/mnemospark-backend ./scripts/list-merged-pr-bugbot-candidates.sh
+```
+
+See [fix/bugbot-merged-pr-fixes-workflow.md](../fix/bugbot-merged-pr-fixes-workflow.md) for the full workflow.
+
+## review-all-bugbot-fixes.sh
+
+For a repo, lists merged PRs that have **@cursor push** in Bugbot comments, then for each checks whether the fix commit is already in `origin/main`. Prints a table: PR, fix hash, In Main? (YES/NO), and a short diff summary for those not in main.
+
+**Requires:** `gh`, `jq`, and (optional) `LOCAL_REPO_DIR` pointing to a local clone.
+
+```bash
+export REPO=pawlsclick/mnemospark-backend
+export LOCAL_REPO_DIR=/path/to/mnemospark-backend  # optional
+./scripts/review-all-bugbot-fixes.sh
+```
+
+## review-bugbot-fix.sh
+
+For **one** PR: extracts the Bugbot `@cursor push <hash>` from comments, then in a local or cached clone checks if that commit is in `origin/main`. If not, shows `git log` and `git diff --stat` and optionally writes a full diff file.
+
+**Requires:** `gh`, `jq`. Optional: `LOCAL_REPO_DIR` (your existing clone; otherwise uses a cache under `~/.mnemospark-bugbot/<repo-slug>`).
+
+```bash
+REPO=pawlsclick/mnemospark-backend PR=15 LOCAL_REPO_DIR=/path/to/repo ./scripts/review-bugbot-fix.sh
+```
+
+Use after the batch report to inspect a specific PR before applying the fix (e.g. via `git cherry-pick`). See [fix/bugbot-merged-pr-fixes-workflow.md](../fix/bugbot-merged-pr-fixes-workflow.md) for the full workflow.
+
+## test_mnemospark_lite_upload.py
+
+End-to-end verification against a **deployed** mnemospark-lite upload API (402 → x402 payment → presigned PUT → complete → list/detail).
+
+**Requires:** Python with `eth-account` and `x402` (match versions with `mnemospark-backend`).
+
+**Environment:**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `MNEMOSPARK_API_BASE_URL` | yes | API base (no trailing slash), e.g. `https://api.example.com` |
-| `MNEMOSPARK_WALLET_KEY_PATH` | yes | File containing the payer private key (hex). **Keep local only.** |
-| `MNEMOSPARK_TEST_FILE` | yes | Path to a file to upload |
+| `MNEMOSPARK_API_BASE_URL` | yes | API base URL (no trailing slash) |
+| `MNEMOSPARK_WALLET_KEY_PATH` | yes | File with payer private key (hex). Keep local only. |
+| `MNEMOSPARK_TEST_FILE` | yes | Path to file to upload |
 | `MNEMOSPARK_TIER` | no | Default `10mb` |
 | `MNEMOSPARK_CONTENT_TYPE` | no | MIME type; guessed from filename if unset |
-
-### Run
 
 ```bash
 export MNEMOSPARK_API_BASE_URL="https://…"
@@ -31,4 +85,4 @@ export MNEMOSPARK_TEST_FILE="/path/to/file.bin"
 python3 scripts/test_mnemospark_lite_upload.py
 ```
 
-On success, prints JSON with `uploadId`, `publicUrl`, and `downloadUrl`.
+On success prints JSON with `uploadId`, `publicUrl`, and `downloadUrl`.

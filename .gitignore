@@ -5,10 +5,8 @@
 !.cursor/rules/**
 .DS_Store
 
-# Local scripts under scripts/ stay ignored unless explicitly allowed below.
-scripts/*
-!scripts/README.md
-!scripts/test_mnemospark_lite_upload.py
+# Local/scratch under scripts/ (tracked files remain tracked; use `git add -f` to add new scripts).
+scripts/
 
 # Env / secrets
 .env
