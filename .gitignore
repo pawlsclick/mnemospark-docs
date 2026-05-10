@@ -4,6 +4,8 @@
 !.cursor/rules/
 !.cursor/rules/**
 .DS_Store
+
+# Local/scratch under scripts/ (tracked files remain tracked; use `git add -f` to add new scripts).
 scripts/
 
 # Env / secrets

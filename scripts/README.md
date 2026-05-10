@@ -61,3 +61,28 @@ REPO=pawlsclick/mnemospark-backend PR=15 LOCAL_REPO_DIR=/path/to/repo ./scripts/
 ```
 
 Use after the batch report to inspect a specific PR before applying the fix (e.g. via `git cherry-pick`). See [fix/bugbot-merged-pr-fixes-workflow.md](../fix/bugbot-merged-pr-fixes-workflow.md) for the full workflow.
+
+## test_mnemospark_lite_upload.py
+
+End-to-end verification against a **deployed** mnemospark-lite upload API (402 → x402 payment → presigned PUT → complete → list/detail).
+
+**Requires:** Python with `eth-account` and `x402` (match versions with `mnemospark-backend`).
+
+**Environment:**
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MNEMOSPARK_API_BASE_URL` | yes | API base URL (no trailing slash) |
+| `MNEMOSPARK_WALLET_KEY_PATH` | yes | File with payer private key (hex). Keep local only. |
+| `MNEMOSPARK_TEST_FILE` | yes | Path to file to upload |
+| `MNEMOSPARK_TIER` | no | Default `10mb` |
+| `MNEMOSPARK_CONTENT_TYPE` | no | MIME type; guessed from filename if unset |
+
+```bash
+export MNEMOSPARK_API_BASE_URL="https://…"
+export MNEMOSPARK_WALLET_KEY_PATH="$HOME/.secrets/payer.key"
+export MNEMOSPARK_TEST_FILE="/path/to/file.bin"
+python3 scripts/test_mnemospark_lite_upload.py
+```
+
+On success prints JSON with `uploadId`, `publicUrl`, and `downloadUrl`.
